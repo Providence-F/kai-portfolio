@@ -1,0 +1,119 @@
+.page-home {
+  background: var(--bg-dark);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.home {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6rem 2rem 2rem;
+}
+
+.home__staff {
+  position: relative;
+  width: min(800px, 90vw);
+  padding-top: 2rem;
+}
+
+.staff-svg {
+  width: 100%;
+  height: auto;
+}
+
+.cat {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 80px;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+
+.cat:hover {
+  transform: translateX(-50%) scale(1.05);
+}
+
+.cat.is-playing {
+  animation: cat-bob 0.4s ease-in-out 2;
+}
+
+@keyframes cat-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-8px); }
+}
+
+.home__hint {
+  text-align: center;
+  color: var(--text-on-dark);
+  opacity: 0.8;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  margin: 2rem 0;
+}
+
+.piano {
+  width: min(900px, 95vw);
+  margin-bottom: 2rem;
+}
+
+.piano-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.piano-key {
+  cursor: pointer;
+  transition: transform var(--duration-fast) ease-out, fill var(--duration-fast) ease-out;
+}
+
+.piano-key:hover {
+  fill: #fff8ed;
+}
+
+.piano-key.is-pressed {
+  transform: translateY(8px);
+}
+
+.piano-key-label {
+  pointer-events: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  fill: var(--text-primary);
+  text-anchor: middle;
+}
+
+.piano-key-label--sub {
+  font-size: 10px;
+  fill: var(--text-muted);
+}
+
+.transition-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-light);
+  clip-path: circle(0% at 50% 50%);
+  pointer-events: none;
+  z-index: 200;
+}
+
+.transition-overlay.is-active {
+  clip-path: circle(150% at 50% 50%);
+  transition: clip-path var(--duration-reveal) var(--ease-out-expo);
+}
+
+@media (max-width: 768px) {
+  .home {
+    padding-top: 5rem;
+  }
+  .home__hint {
+    font-size: 0.85rem;
+  }
+}

@@ -1,0 +1,290 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-light);
+  padding-top: 6rem;
+  padding-bottom: 4rem;
+}
+
+.page__container {
+  width: min(1000px, 90vw);
+  margin: 0 auto;
+}
+
+.page__title {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: var(--text-primary);
+}
+
+.page__subtitle {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-bottom: 3rem;
+  max-width: 600px;
+}
+
+.section {
+  margin-bottom: 4rem;
+}
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(24px);
+  animation: fade-in-up 0.6s var(--ease-out-expo) forwards;
+}
+
+@keyframes fade-in-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Projects */
+.project {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+  margin-bottom: 5rem;
+}
+
+.project--reverse {
+  direction: rtl;
+}
+
+.project--reverse > * {
+  direction: ltr;
+}
+
+.project__media {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  transition: transform var(--duration-normal) var(--ease-out-expo),
+              box-shadow var(--duration-normal) var(--ease-out-expo);
+}
+
+.project__media:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+.project__image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+
+.project__media:hover .project__image {
+  transform: scale(1.02);
+}
+
+.project__media--empty {
+  aspect-ratio: 16 / 10;
+  background: #ede8dd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project__placeholder {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem;
+  line-height: 1.4;
+}
+
+.project__title {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  margin: 0 0 0.75rem;
+}
+
+.project__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tag {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--text-muted);
+  color: var(--text-muted);
+  border-radius: 999px;
+}
+
+.project__desc {
+  color: var(--text-muted);
+  line-height: 1.8;
+  margin-bottom: 1.25rem;
+}
+
+.project__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: gap var(--duration-fast) var(--ease-out-expo);
+}
+
+.project__link:hover {
+  gap: 0.75rem;
+}
+
+/* Timeline */
+.experience-hero {
+  max-width: 360px;
+  margin: 0 auto 3rem;
+}
+
+.experience-hero img {
+  width: 100%;
+  height: auto;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--text-muted);
+  opacity: 0.3;
+}
+
+.timeline__item {
+  position: relative;
+  padding-bottom: 3rem;
+}
+
+.timeline__marker {
+  position: absolute;
+  left: -2rem;
+  top: 0.25rem;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--bg-light);
+  border: 2px solid var(--accent);
+}
+
+.timeline__date {
+  font-family: var(--font-handwriting);
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+.timeline__title {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.timeline__desc {
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* About */
+.about {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.about__portrait {
+  position: sticky;
+  top: 7rem;
+}
+
+.about__portrait img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  background: #ede8dd;
+}
+
+.about__bio {
+  color: var(--text-muted);
+  line-height: 1.9;
+  font-size: 1.05rem;
+}
+
+.about__bio p {
+  margin-bottom: 1rem;
+}
+
+.about__bio strong {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.about__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.contact-link {
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding-top: 5rem;
+  }
+
+  .project,
+  .project--reverse {
+    grid-template-columns: 1fr;
+    direction: ltr;
+  }
+
+  .project--reverse > * {
+    direction: ltr;
+  }
+
+  .project__media {
+    order: -1;
+  }
+
+  .timeline {
+    padding-left: 1.5rem;
+  }
+
+  .timeline__marker {
+    left: -1.5rem;
+    width: 11px;
+    height: 11px;
+  }
+
+  .about {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .about__portrait {
+    position: static;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+}
