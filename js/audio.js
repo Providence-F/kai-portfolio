@@ -22,24 +22,20 @@ window.PianoApp.initAudio = function () {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     window.PianoApp.audioCtx = new AudioContext();
   }
-  // Only call resume() once a user gesture has occurred. The DOMContentLoaded
-  // warm-up call hits this before any interaction, and Chrome logs a console
-  // warning if we try to resume then. The next gesture-triggered call (piano
-  // click, playback start) will resume the context successfully.
   if (window.PianoApp.audioCtx.state === "suspended") {
-    var ua = navigator.userActivation;
-    if (!ua || ua.hasBeenActive || ua.isActive) {
-      window.PianoApp.audioCtx.resume();
-    }
+    window.PianoApp.audioCtx.resume();
   }
   if (!window.PianoApp._reverbNode && window.PianoApp.audioCtx) {
     window.PianoApp._reverbNode = window.PianoApp._createReverb();
   }
+  // Lazy-load SoundFont: kick it off on first user interaction, not on
+  // DOMContentLoaded. The 2.5MB file is the biggest bottleneck for page
+  // load, so defer it until the user actually interacts with the piano.
   window.PianoApp._ensureSoundfont().then(function () {
     if (window.PianoApp.canonSequence && window.PianoApp.Sequencer) {
       window.PianoApp.Sequencer._predecodeSamples();
     }
-  });
+  }).catch(function () { /* Will retry on next playNote call */ });
 };
 
 window.PianoApp._createReverb = function () {
