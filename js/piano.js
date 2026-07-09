@@ -452,11 +452,13 @@ window.PianoApp.initPiano = function () {
             if (group) group.classList.remove("pressed");
             setVisualState(note, "pressed", false);
             cancelPreviewAnimation();
-            window.PianoApp.navigateWithTransition(
-              nav.href,
-              getNavVariants()[nav.href] || "fade",
-              group ? (() => { const r = group.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })() : null
-            );
+            const origin = group ? (() => { const r = group.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })() : null;
+            const spaMode = !!(document.getElementById('home-view') && document.getElementById('page-view'));
+            if (spaMode && window.PianoApp.spaNavigate) {
+              window.PianoApp.spaNavigate(nav.href, getNavVariants()[nav.href] || "fade", origin);
+            } else {
+              window.PianoApp.navigateWithTransition(nav.href, getNavVariants()[nav.href] || "fade", origin);
+            }
           }, LONG_PRESS_DURATION);
           return;
         }

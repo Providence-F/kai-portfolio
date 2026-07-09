@@ -41,6 +41,11 @@ function getTransitionVariant(from, to) {
   return transitionPairs[pairKey] || transitionVariants[to] || "fade";
 }
 
+// ─── SPA detection ─────────────────────────────────
+function isSpaMode() {
+  return !!(document.getElementById('home-view') && document.getElementById('page-view'));
+}
+
 // ─── Key position helpers ──────────────────────────
 
 function getKeyOrigin(note) {
@@ -92,6 +97,388 @@ function cleanupTransitionLayers() {
   document.body.style.transition = "";
 }
 
+// ─── SPA page loading ──────────────────────────────
+
+const pageInitMap = {
+  'portfolio.html': 'initPortfolio',
+  'about.html': 'initAbout',
+  'experience.html': 'initMap',
+};
+
+function fetchPageContent(url) {
+  return fetch(url, { credentials: 'same-origin' })
+    .then(function (res) {
+      if (!res.ok) throw new Error('Failed to load ' + url + ': ' + res.status);
+      return res.text();
+    })
+    .then(function (html) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      const titleEl = doc.querySelector('.page-header .page-title');
+      const pageEl = doc.querySelector('.page.page-warm, .page.experience-ariel, .page');
+      const descMeta = doc.querySelector('meta[name="description"]');
+
+      return {
+        title: titleEl ? {
+          text: titleEl.textContent,
+          i18nKey: titleEl.getAttribute('data-i18n'),
+        } : null,
+        pageClass: pageEl ? pageEl.className : 'page page-warm',
+        pageHTML: pageEl ? pageEl.innerHTML : '',
+        description: descMeta ? descMeta.getAttribute('content') : '',
+      };
+    });
+}
+
+function setSpaPageState(url) {
+  const homeView = document.getElementById('home-view');
+  const pageHeader = document.getElementById('page-header');
+  const pageView = document.getElementById('page-view');
+
+  if (url === 'index.html' || url === 'index' || url === '' || url === '/') {
+    document.body.classList.add('spa-home');
+    document.body.classList.remove('spa-subpage');
+    document.body.classList.add('landscape-page');
+    if (homeView) homeView.classList.add('active');
+    if (pageHeader) pageHeader.style.display = 'none';
+    if (pageView) pageView.classList.remove('active');
+    if (pageView) pageView.style.display = 'none';
+  } else {
+    document.body.classList.remove('spa-home');
+    document.body.classList.add('spa-subpage');
+    document.body.classList.remove('landscape-page');
+    if (homeView) homeView.classList.remove('active');
+    if (pageHeader) pageHeader.style.display = '';
+    if (pageView) pageView.classList.add('active');
+    if (pageView) pageView.style.display = '';
+  }
+}
+
+function applySubPageContent(url, content) {
+  const pageHeader = document.getElementById('page-header');
+  const pageView = document.getElementById('page-view');
+  const pageTitle = document.getElementById('page-title');
+
+  if (!pageHeader || !pageView) return;
+
+  // Update title
+  if (pageTitle && content.title) {
+    pageTitle.textContent = content.title.text;
+    if (content.title.i18nKey) {
+      pageTitle.setAttribute('data-i18n', content.title.i18nKey);
+    } else {
+      pageTitle.removeAttribute('data-i18n');
+    }
+  }
+
+  // Update page class and content
+  pageView.className = content.pageClass;
+  pageView.innerHTML = content.pageHTML;
+
+  // Update meta description
+  const descMeta = document.querySelector('meta[name="description"]');
+  if (descMeta && content.description) {
+    descMeta.setAttribute('content', content.description);
+  }
+
+  // i18n
+  if (window.PianoApp.i18n) {
+    window.PianoApp.i18n.apply();
+    window.PianoApp.i18n.bindToggle();
+  }
+
+  // Active nav
+  updateActiveNav(url);
+
+  // Initialize page-specific content
+  const initName = pageInitMap[url];
+  if (initName && typeof window.PianoApp[initName] === 'function') {
+    try {
+      window.PianoApp[initName]();
+    } catch (e) {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.error('[SPA] init error:', initName, e);
+      }
+    }
+  }
+
+  // Scroll to top
+  window.scrollTo(0, 0);
+}
+
+function updateActiveNav(url) {
+  document.querySelectorAll('.page-nav a').forEach(function (link) {
+    const href = link.getAttribute('href');
+    if (href === url || href === './' + url) {
+      link.setAttribute('aria-current', 'page');
+    } else {
+      link.removeAttribute('aria-current');
+    }
+  });
+}
+
+window.PianoApp.spaLoadPage = function (url, options) {
+  options = options || {};
+  return fetchPageContent(url).then(function (content) {
+    applySubPageContent(url, content);
+    setSpaPageState(url);
+    if (!options.silent) {
+      history.pushState({ spaUrl: url }, '', url);
+    }
+    document.title = content.title && content.title.text ? content.title.text : document.title;
+  });
+};
+
+// ─── SPA navigation with transitions ───────────────
+
+window.PianoApp.spaNavigate = function (url, variant, origin) {
+  const currentPage = getPageName();
+  if (currentPage === url) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (url === 'index.html') {
+      goHomeInSpa(url);
+    } else {
+      window.PianoApp.spaLoadPage(url);
+    }
+    return;
+  }
+
+  sessionStorage.setItem('pianoTransition', JSON.stringify({
+    from: currentPage, to: url, variant: variant, timestamp: Date.now()
+  }));
+  sessionStorage.removeItem('pianoTransitionPlayed');
+
+  if (variant === 'circle-reveal') {
+    if (currentPage === 'index.html') {
+      // Forward: home → sub-page
+      const targetKey = getPageToNote(url) || 'C3';
+      const pos = origin || getKeyOrigin(targetKey);
+
+      const origins = JSON.parse(sessionStorage.getItem('keyOrigins') || '{}');
+      origins[targetKey] = pos;
+      sessionStorage.setItem('keyOrigins', JSON.stringify(origins));
+
+      // Load new page content first (hidden)
+      fetchPageContent(url).then(function (content) {
+        applySubPageContent(url, content);
+        setSpaPageState(url);
+
+        const homeView = document.getElementById('home-view');
+        const pageHeader = document.getElementById('page-header');
+        const pageView = document.getElementById('page-view');
+
+        // Position page-view above home-view, initially transparent
+        if (pageView) {
+          pageView.style.opacity = '0';
+          pageView.style.transition = 'opacity 0.25s ease';
+        }
+        if (pageHeader) {
+          pageHeader.style.opacity = '0';
+          pageHeader.style.transition = 'opacity 0.25s ease 0.15s';
+        }
+
+        // Create expanding mask from key origin
+        const mask = document.createElement('div');
+        mask.className = 'circle-reveal-mask';
+        mask.style.cssText =
+          'position:fixed;inset:0;z-index:100;' +
+          'background:#F2ECE2;';
+        document.body.appendChild(mask);
+
+        mask.animate([
+          { clipPath: 'circle(0% at ' + pos.x + 'px ' + pos.y + 'px)' },
+          { clipPath: 'circle(150% at ' + pos.x + 'px ' + pos.y + 'px)' }
+        ], {
+          duration: 800,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          fill: 'forwards'
+        });
+
+        setTimeout(function () {
+          if (homeView) homeView.classList.remove('active');
+          if (pageHeader) pageHeader.style.opacity = '1';
+          if (pageView) pageView.style.opacity = '1';
+          history.pushState({ spaUrl: url }, '', url);
+          document.title = content.title && content.title.text ? content.title.text : document.title;
+        }, 720);
+
+        setTimeout(function () {
+          mask.remove();
+          cleanupTransitionLayers();
+        }, 1000);
+      }).catch(function (err) {
+        console.error('[SPA] failed to load page:', err);
+        window.location.href = url;
+      });
+
+    } else {
+      // Reverse: sub-page → home
+      const targetKey = getPageToNote(currentPage) || 'C3';
+      const origins = JSON.parse(sessionStorage.getItem('keyOrigins') || '{}');
+      const stored = origins[targetKey];
+      const pos = stored || getKeyOrigin(targetKey);
+
+      const homeView = document.getElementById('home-view');
+      const pageHeader = document.getElementById('page-header');
+      const pageView = document.getElementById('page-view');
+
+      if (homeView) {
+        homeView.classList.add('active');
+        homeView.style.opacity = '0';
+        homeView.style.transition = 'opacity 0.35s ease 0.45s';
+      }
+
+      if (pageView) {
+        pageView.style.transition = 'clip-path 0.8s cubic-bezier(0.22,1,0.36,1), opacity 0.8s ease';
+        pageView.style.clipPath = 'circle(200% at ' + pos.x + 'px ' + pos.y + 'px)';
+      }
+
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          if (pageView) {
+            pageView.style.clipPath = 'circle(0% at ' + pos.x + 'px ' + pos.y + 'px)';
+            pageView.style.opacity = '0';
+          }
+        });
+      });
+
+      setTimeout(function () {
+        setSpaPageState('index.html');
+        if (homeView) homeView.style.opacity = '1';
+        if (pageHeader) pageHeader.style.display = 'none';
+        if (pageView) {
+          pageView.classList.remove('active');
+          pageView.style.display = 'none';
+          pageView.style.clipPath = '';
+          pageView.style.opacity = '';
+          pageView.style.transition = '';
+          pageView.innerHTML = '';
+        }
+        history.pushState({ spaUrl: 'index.html' }, '', 'index.html');
+        document.title = 'Piano';
+        cleanupTransitionLayers();
+      }, 850);
+    }
+
+  } else if (variant === 'slide-from-right') {
+    const pageContent = document.querySelector('#page-view .page-content');
+    const pageTitle = document.querySelector('#page-header .page-title');
+
+    if (pageContent) {
+      pageContent.style.transition = 'transform 0.9s cubic-bezier(0.22,1,0.36,1), opacity 0.9s ease';
+      pageContent.style.transform = 'translateX(-15%)';
+      pageContent.style.opacity = '0.5';
+    }
+
+    if (pageTitle) {
+      pageTitle.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+      pageTitle.style.opacity = '0';
+      pageTitle.style.transform = 'translateY(-6px)';
+    }
+
+    const bgLayer = document.createElement('div');
+    bgLayer.className = 'reveal-slide-bg';
+    bgLayer.style.cssText =
+      'position:fixed;inset:0;z-index:89;' +
+      'background:#F2ECE2;' +
+      'transform:translateX(100%);' +
+      'transition:transform 0.9s cubic-bezier(0.22,1,0.36,1);';
+    document.body.appendChild(bgLayer);
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        bgLayer.style.transform = 'translateX(0)';
+      });
+    });
+
+    setTimeout(function () {
+      fetchPageContent(url).then(function (content) {
+        applySubPageContent(url, content);
+        setSpaPageState(url);
+
+        const newPageContent = document.querySelector('#page-view .page-content');
+        const newPageTitle = document.querySelector('#page-header .page-title');
+        const newPageView = document.getElementById('page-view');
+
+        if (newPageView) {
+          newPageView.style.transform = 'translateX(100%)';
+          newPageView.style.transition = 'transform 0.9s cubic-bezier(0.22,1,0.36,1)';
+        }
+
+        if (newPageContent) {
+          newPageContent.style.opacity = '1';
+          newPageContent.style.transform = 'translateX(0)';
+        }
+
+        if (newPageTitle) {
+          newPageTitle.style.opacity = '0';
+          newPageTitle.style.transform = 'translateY(8px)';
+          newPageTitle.style.transition = 'none';
+          newPageTitle.style.animation = 'none';
+        }
+
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            if (newPageView) newPageView.style.transform = 'translateX(0)';
+            if (newPageTitle) {
+              newPageTitle.style.transition = 'opacity 0.5s cubic-bezier(0.22,1,0.36,1), transform 0.5s cubic-bezier(0.22,1,0.36,1)';
+              newPageTitle.style.opacity = '1';
+              newPageTitle.style.transform = 'translateY(0)';
+            }
+          });
+        });
+
+        history.pushState({ spaUrl: url }, '', url);
+        document.title = content.title && content.title.text ? content.title.text : document.title;
+
+        setTimeout(function () {
+          bgLayer.remove();
+          cleanupTransitionLayers();
+        }, 950);
+      }).catch(function (err) {
+        console.error('[SPA] slide navigation failed:', err);
+        window.location.href = url;
+      });
+    }, 950);
+
+  } else {
+    // fade
+    const pageContent = document.querySelector('#page-view .page-content') || document.querySelector('.page-content');
+    if (pageContent) {
+      pageContent.style.transition = 'opacity 0.5s ease';
+      pageContent.style.opacity = '0';
+    }
+    setTimeout(function () {
+      if (url === 'index.html') {
+        goHomeInSpa(url);
+      } else {
+        window.PianoApp.spaLoadPage(url);
+      }
+    }, 500);
+  }
+};
+
+function goHomeInSpa(url) {
+  const homeView = document.getElementById('home-view');
+  const pageHeader = document.getElementById('page-header');
+  const pageView = document.getElementById('page-view');
+
+  setSpaPageState('index.html');
+  if (homeView) homeView.classList.add('active');
+  if (pageHeader) pageHeader.style.display = 'none';
+  if (pageView) {
+    pageView.className = 'page';
+    pageView.classList.remove('active');
+    pageView.style.display = 'none';
+    pageView.innerHTML = '';
+  }
+  history.pushState({ spaUrl: 'index.html' }, '', url || 'index.html');
+  document.title = 'Piano';
+  cleanupTransitionLayers();
+}
+
 // ─── Init ──────────────────────────────────────────
 
 window.PianoApp.initTransitions = function () {
@@ -105,6 +492,10 @@ window.PianoApp.initTransitions = function () {
     const href = link.getAttribute("href");
     if (!href || href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:")) return;
 
+    // Avoid rebinding
+    if (link.dataset.transitionBound === '1') return;
+    link.dataset.transitionBound = '1';
+
     link.addEventListener("click", (e) => {
       e.preventDefault();
       const currentPage = getPageName();
@@ -117,7 +508,11 @@ window.PianoApp.initTransitions = function () {
         if (targetKey) origin = getKeyOrigin(targetKey);
       }
 
-      window.PianoApp.navigateWithTransition(href, variant, origin);
+      if (isSpaMode()) {
+        window.PianoApp.spaNavigate(href, variant, origin);
+      } else {
+        window.PianoApp.navigateWithTransition(href, variant, origin);
+      }
     });
   });
 
@@ -133,10 +528,28 @@ window.PianoApp.initTransitions = function () {
     // circle-reveal and fade do not need reverse entry animations
   }
 
+  // SPA popstate: handle browser back/forward within the same session
+  if (isSpaMode()) {
+    window.addEventListener('popstate', function (e) {
+      const targetUrl = (e.state && e.state.spaUrl) || getPageName();
+      if (targetUrl === 'index.html' || targetUrl === 'index' || targetUrl === '' || targetUrl === '/') {
+        goHomeInSpa('index.html');
+      } else {
+        fetchPageContent(targetUrl).then(function (content) {
+          applySubPageContent(targetUrl, content);
+          setSpaPageState(targetUrl);
+          document.title = content.title && content.title.text ? content.title.text : document.title;
+        }).catch(function () {
+          window.location.href = targetUrl;
+        });
+      }
+    });
+  }
+
   window.PianoApp.initNav();
 };
 
-// ─── Navigate (forward exit animation) ──────────────
+// ─── Legacy full-page navigation (used in standalone pages) ──────────────
 
 window.PianoApp.navigateWithTransition = function (url, variant, origin) {
   const currentPage = getPageName();
