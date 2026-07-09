@@ -67,6 +67,7 @@ window.PianoApp._createReverb = function () {
 window.PianoApp._ensureSoundfont = function () {
   const sf = window.PianoApp._sf;
   if (sf.loaded) return Promise.resolve();
+  if (sf._loadPromise) return sf._loadPromise;
 
   sf._loadPromise = new Promise(function (resolve, reject) {
     sf.loading = true;
@@ -81,11 +82,12 @@ window.PianoApp._ensureSoundfont = function () {
       if (sfData) {
         sf.loaded = true;
         sf.data = sfData;
+        // Preload only the notes on the piano keyboard (F2–E4).
+        // Higher octaves (C5–C7) are decoded on demand by the canon sequencer.
         window.PianoApp._preloadSamples([
-          "C2","D2","E2","F2","Gb2","G2","Ab2","A2","Bb2","B2",
+          "F2","Gb2","G2","Ab2","A2","Bb2","B2",
           "C3","Db3","D3","Eb3","E3","F3","Gb3","G3","Ab3","A3","Bb3","B3",
-          "C4","Db4","D4","Eb4","E4","F4","Gb4","G4","Ab4","A4","Bb4","B4",
-          "C5","D5","E5","F5","G5","A5","B5","C6","D6","E6","F6","G6","C7",
+          "C4","Db4","D4","Eb4","E4",
         ]);
         resolve();
       } else {
@@ -297,20 +299,43 @@ window.PianoApp._toSfNote = function (note) {
 window.PianoApp._play = function (sfNote, durationMs, when, velocity, options) {
   window.PianoApp.initAudio();
   const ctx = window.PianoApp.audioCtx;
-  const start = when || ctx.currentTime;
+
+  // _play is always called from a user gesture, so we can safely resume
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+
   const dur = Math.max((durationMs != null ? durationMs : 1400) / 1000, 0.05);
   const vel = velocity != null ? velocity : 0.9;
 
+  // Case 1: buffer already decoded → play immediately
   if (window.PianoApp._sf.buffers[sfNote]) {
+    const start = when || ctx.currentTime;
     return window.PianoApp._playSample(sfNote, start, dur, vel, options);
   }
 
-  if (
-    window.PianoApp._sf.loaded &&
-    window.PianoApp._sf.data &&
-    window.PianoApp._sf.data[sfNote]
-  ) {
-    window.PianoApp._decodeSample(sfNote);
+  // Case 2: SoundFont loaded but this note not yet decoded → decode then play
+  if (window.PianoApp._sf.loaded && window.PianoApp._sf.data && window.PianoApp._sf.data[sfNote]) {
+    window.PianoApp._decodeSample(sfNote).then(function (buffer) {
+      if (buffer && window.PianoApp.audioCtx) {
+        var start = window.PianoApp.audioCtx.currentTime;
+        window.PianoApp._playSample(sfNote, start, dur, vel, options);
+      }
+    });
+    return null;
+  }
+
+  // Case 3: SoundFont still loading → wait for load, decode, then play
+  if (!window.PianoApp._sf.loaded) {
+    window.PianoApp._ensureSoundfont().then(function () {
+      window.PianoApp._decodeSample(sfNote).then(function (buffer) {
+        if (buffer && window.PianoApp.audioCtx) {
+          var start = window.PianoApp.audioCtx.currentTime;
+          window.PianoApp._playSample(sfNote, start, dur, vel, options);
+        }
+      });
+    }).catch(function () { /* SoundFont failed to load */ });
+    return null;
   }
 
   return null;
