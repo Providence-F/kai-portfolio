@@ -197,7 +197,7 @@ window.PianoApp.data = {
       "I believe a good research system helps people keep their judgment in the flood of information;",
       "and that good products should give life back to people.",
     ],
-    avatar: "assets/images/portrait-new.png?v=2",
+    avatar: "assets/images/portrait-new.png?v=3",
     avatarAlt: "房宇航的自画像",
     avatarAltEn: "Kai's self-portrait",
     bio: [

@@ -106,7 +106,12 @@ const pageInitMap = {
 };
 
 function fetchPageContent(url) {
-  return fetch(url, { credentials: 'same-origin' })
+  // Timeout: if GitHub Pages is slow, fall back to full navigation after 8s
+  var timeoutPromise = new Promise(function (_, reject) {
+    setTimeout(function () { reject(new Error('SPA fetch timeout: ' + url)); }, 8000);
+  });
+
+  var fetchPromise = fetch(url, { credentials: 'same-origin' })
     .then(function (res) {
       if (!res.ok) throw new Error('Failed to load ' + url + ': ' + res.status);
       return res.text();
@@ -129,6 +134,8 @@ function fetchPageContent(url) {
         description: descMeta ? descMeta.getAttribute('content') : '',
       };
     });
+
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 function setSpaPageState(url) {
