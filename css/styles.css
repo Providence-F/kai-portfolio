@@ -747,6 +747,10 @@ html[data-lang="zh"] .page-title {
   color: var(--warm-ivory-faint);
   transition: color 0.3s ease;
 }
+.social-copy {
+  cursor: pointer;
+  user-select: none;
+}
 .social-item:hover {
   color: var(--warm-ivory);
 }

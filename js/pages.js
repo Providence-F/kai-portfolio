@@ -282,6 +282,9 @@ window.PianoApp.initAbout = function () {
   if (socialEl && about.socialLinks) {
     socialEl.innerHTML = about.socialLinks.map(function (l) {
       var label = pickField(l, 'name') || l.name;
+      if (l.type === 'copy') {
+        return '<span class="social-item social-copy" data-copy-value="' + l.value + '" role="button" tabindex="0">' + label + '</span>';
+      }
       if (l.type === 'tooltip') {
         var tooltipBody = l.tooltipType === 'image'
           ? '<img src="' + l.tooltipContent + '" alt="' + label + '">'
@@ -311,9 +314,72 @@ window.PianoApp.initAbout = function () {
       };
     });
 
-    // Mobile: tap to toggle tooltip
+    // Copy-to-clipboard for social-copy items
+    socialEl.querySelectorAll('.social-copy').forEach(function (item) {
+      var copyValue = item.getAttribute('data-copy-value');
+      function doCopy() {
+        var isZh = (document.documentElement.getAttribute('data-lang') || 'zh') === 'zh';
+        var toastMsg = isZh ? '已复制：' + copyValue : 'Copied: ' + copyValue;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(copyValue).then(function () {
+            showToast(toastMsg);
+          }).catch(function () {
+            fallbackCopy(copyValue, toastMsg);
+          });
+        } else {
+          fallbackCopy(copyValue, toastMsg);
+        }
+      }
+      function fallbackCopy(text, msg) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        showToast(msg);
+      }
+      item.addEventListener('click', function (e) {
+        e.stopPropagation();
+        doCopy();
+      });
+      item.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          doCopy();
+        }
+      });
+    });
+
+    // Toast notification
+    if (!window.PianoApp._toastStyle) {
+      window.PianoApp._toastStyle = true;
+      var style = document.createElement('style');
+      style.textContent = '.copy-toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text-dark, #1C1916);color:var(--warm-ivory, #FEF6E4);padding:12px 24px;border-radius:8px;font-size:14px;font-family:var(--font-sans, sans-serif);box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:9999;opacity:0;transition:opacity 0.3s ease, transform 0.3s ease;pointer-events:none;}' +
+        '.copy-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}';
+      document.head.appendChild(style);
+    }
+    function showToast(msg) {
+      var existing = document.querySelector('.copy-toast');
+      if (existing) existing.remove();
+      var toast = document.createElement('div');
+      toast.className = 'copy-toast';
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      requestAnimationFrame(function () {
+        toast.classList.add('show');
+      });
+      setTimeout(function () {
+        toast.classList.remove('show');
+        setTimeout(function () { toast.remove(); }, 300);
+      }, 2000);
+    }
+
+    // Mobile: tap to toggle tooltip (non-copy, non-link items only)
     socialEl.querySelectorAll('.social-item').forEach(function (item) {
       if (item.tagName.toLowerCase() === 'a') return;
+      if (item.classList.contains('social-copy')) return;
       item.addEventListener('click', function (e) {
         e.stopPropagation();
         var isActive = item.classList.contains('active');
