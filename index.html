@@ -8,10 +8,12 @@
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600;700&family=Caveat:wght@400;500;600&family=Ma+Shan+Zheng&family=Sintony:wght@400;700&family=LXGW+WenKai&family=Dancing+Script:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600;700&family=Caveat:wght@400;500;600&family=Ma+Shan+Zheng&family=Sintony:wght@400;700&family=LXGW+WenKai&family=Dancing+Script:wght@400;500;600;700&display=swap"></noscript>
   <script>(function(){try{var n=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];if(n&&n.type==='back_forward')document.documentElement.classList.add('prefers-no-animation');}catch(e){}})();</script>
-  <link rel="stylesheet" href="css/styles.css?v=156">
+  <link rel="stylesheet" href="css/styles.css?v=157">
+  <link rel="preload" href="assets/soundfonts/acoustic_grand_piano-mp3.js" as="script">
 </head>
 <body class="landscape-page">
 <!-- Page Transition Overlay -->
@@ -49,9 +51,9 @@
 
   <script defer src="js/data.js?v=141"></script>
   <script defer src="js/i18n.js?v=158"></script>
-  <script defer src="js/audio.js?v=157"></script>
+  <script defer src="js/audio.js?v=158"></script>
   <script defer src="js/transitions.js?v=138"></script>
-  <script defer src="js/piano.js?v=157"></script>
+  <script defer src="js/piano.js?v=158"></script>
   <script defer src="js/canon_data.js?v=135"></script>
   <script defer src="js/sequencer.js?v=137"></script>
   <script defer src="js/recorder.js?v=148"></script>
@@ -65,8 +67,13 @@
     document.addEventListener('DOMContentLoaded', function() {
       window.PianoApp.initTransitions();
       window.PianoApp.initPiano();
-      // Audio is lazy-initialized on first user interaction (click/keydown),
-      // not on page load, to avoid downloading the 2.5MB SoundFont upfront.
+      // Start downloading SoundFont (1.6MB) immediately on page load so it's
+      // ready when the user first presses a key. AudioContext is still created
+      // lazily on first interaction (browser policy), but the download and
+      // parsing of the SoundFont data happens in the background.
+      if (window.PianoApp.preloadSoundfont) {
+        window.PianoApp.preloadSoundfont();
+      }
     });
   </script>
 </body>

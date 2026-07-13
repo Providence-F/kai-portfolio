@@ -17,6 +17,15 @@ window.PianoApp._sf = {
 
 // ─── Audio Context & Reverb ──────────────────────────────────────────────────
 
+// Preload SoundFont on page load (without creating AudioContext) so it's
+// ready when the user first interacts. AudioContext still requires a user
+// gesture, but the 1.6MB file download can happen in the background.
+window.PianoApp.preloadSoundfont = function () {
+  window.PianoApp._ensureSoundfont().catch(function () {
+    /* Will retry on first playNote call */
+  });
+};
+
 window.PianoApp.initAudio = function () {
   if (!window.PianoApp.audioCtx) {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -28,10 +37,17 @@ window.PianoApp.initAudio = function () {
   if (!window.PianoApp._reverbNode && window.PianoApp.audioCtx) {
     window.PianoApp._reverbNode = window.PianoApp._createReverb();
   }
-  // Lazy-load SoundFont: kick it off on first user interaction, not on
-  // DOMContentLoaded. The 2.5MB file is the biggest bottleneck for page
-  // load, so defer it until the user actually interacts with the piano.
+  // SoundFont download was kicked off on page load via preloadSoundfont().
+  // If it hasn't finished yet, _ensureSoundfont returns the existing promise.
   window.PianoApp._ensureSoundfont().then(function () {
+    // Now that AudioContext exists, pre-decode keyboard notes so the first
+    // key press plays instantly. (preloadSoundfont ran before audioCtx was
+    // created, so _preloadSamples couldn't decode anything at that time.)
+    window.PianoApp._preloadSamples([
+      "F2","Gb2","G2","Ab2","A2","Bb2","B2",
+      "C3","Db3","D3","Eb3","E3","F3","Gb3","G3","Ab3","A3","Bb3","B3",
+      "C4","Db4","D4","Eb4","E4",
+    ]);
     if (window.PianoApp.canonSequence && window.PianoApp.Sequencer) {
       window.PianoApp.Sequencer._predecodeSamples();
     }
@@ -119,6 +135,12 @@ window.PianoApp._decodeSample = function (note) {
     }
     if (sf.buffers[note]) {
       resolve(sf.buffers[note]);
+      return;
+    }
+    // AudioContext doesn't exist yet (preload phase before user interaction).
+    // Decoding will happen after initAudio() creates the context.
+    if (!window.PianoApp.audioCtx) {
+      resolve(null);
       return;
     }
     if (sf.decoding.has(note)) {

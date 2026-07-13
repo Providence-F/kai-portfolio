@@ -63,8 +63,8 @@ function getNavVariants() {
   return (window.PianoApp.data && window.PianoApp.data.navMappings && window.PianoApp.data.navMappings.variants) || {};
 }
 
-const LONG_PRESS_DURATION = 2000;
-const PREVIEW_ANIMATION_DURATION = LONG_PRESS_DURATION - 500;
+const LONG_PRESS_DURATION = 1000;
+const PREVIEW_ANIMATION_DURATION = LONG_PRESS_DURATION - 400;
 
 const navKeyAnimations = {
   "C3": { svg: "assets/images/Guitar.svg", size: 76 },
@@ -839,10 +839,18 @@ window.PianoApp.initPiano = function () {
       }
     });
 
-  // Preload nav key SVGs
-  Object.entries(navKeyAnimations).forEach(([, config]) => {
-    fetch(config.svg)
-      .then((r) => r.text())
-      .then((text) => { svgCache[config.svg] = text; });
-  });
+  // Preload nav key SVGs during idle time so they don't compete with
+  // critical resources (SoundFont, landing SVG) during initial load.
+  var preloadNavSvgs = function () {
+    Object.entries(navKeyAnimations).forEach(([, config]) => {
+      fetch(config.svg)
+        .then((r) => r.text())
+        .then((text) => { svgCache[config.svg] = text; });
+    });
+  };
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(preloadNavSvgs, { timeout: 3000 });
+  } else {
+    setTimeout(preloadNavSvgs, 1500);
+  }
 };
