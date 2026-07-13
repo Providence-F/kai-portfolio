@@ -63,8 +63,8 @@ function getNavVariants() {
   return (window.PianoApp.data && window.PianoApp.data.navMappings && window.PianoApp.data.navMappings.variants) || {};
 }
 
-const LONG_PRESS_DURATION = 1000;
-const PREVIEW_ANIMATION_DURATION = LONG_PRESS_DURATION - 400;
+const LONG_PRESS_DURATION = 2000;
+const PREVIEW_ANIMATION_DURATION = LONG_PRESS_DURATION - 500;
 
 const navKeyAnimations = {
   "C3": { svg: "assets/images/Guitar.svg", size: 76 },
@@ -76,6 +76,25 @@ let longPressTimer = null;
 let longPressNote = null;
 let previewState = null;
 const svgCache = {};
+
+// Preload images for a target sub-page so they're cached in the browser
+// before the SPA transition finishes. Without this, images only start
+// downloading AFTER initPortfolio/initAbout runs (post-transition), which
+// is the main cause of the portfolio page feeling sluggish on entry.
+const preloadedPageImages = new Set();
+function preloadPageImages(href) {
+  if (preloadedPageImages.has(href)) return;
+  preloadedPageImages.add(href);
+  const data = window.PianoApp.data;
+  if (!data) return;
+  if (href === 'portfolio.html' && data.projects) {
+    data.projects.forEach(function (p) {
+      if (p.image) { const img = new Image(); img.src = p.image; }
+    });
+  } else if (href === 'about.html' && data.about) {
+    if (data.about.avatar) { const img = new Image(); img.src = data.about.avatar; }
+  }
+}
 
 // ─── Render ──────────────────────────────────
 window.PianoApp.initPiano = function () {
@@ -437,6 +456,9 @@ window.PianoApp.initPiano = function () {
             prefetchLink.href = nav.href;
             document.head.appendChild(prefetchLink);
           }
+          // Immediately start preloading the target page's images so they're
+          // cached by the time the long-press transition completes.
+          preloadPageImages(nav.href);
           // Preload heavy assets for target page after 0.5s (deduplicated)
           setTimeout(() => {
             if (nav.href === 'experience.html') {
@@ -852,5 +874,17 @@ window.PianoApp.initPiano = function () {
     window.requestIdleCallback(preloadNavSvgs, { timeout: 3000 });
   } else {
     setTimeout(preloadNavSvgs, 1500);
+  }
+
+  // Preload sub-page cover images during idle time so they're already cached
+  // when the user navigates. This runs after SoundFont and the landing SVG
+  // have started loading, so it won't compete with critical resources.
+  var preloadSubPageCovers = function () {
+    ['portfolio.html', 'about.html'].forEach(preloadPageImages);
+  };
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(preloadSubPageCovers, { timeout: 5000 });
+  } else {
+    setTimeout(preloadSubPageCovers, 2500);
   }
 };

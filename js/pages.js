@@ -28,8 +28,10 @@ window.PianoApp.initPortfolio = function () {
     var images = project.images;
     if (images && images.length > 1) {
       var slides = images.map(function (src, idx) {
+        // First slide is visible immediately → load eagerly; rest stay lazy.
+        var loading = idx === 0 ? 'eager' : 'lazy';
         return '<div class="project-slider-slide">'
-          + '<img src="' + src + '" alt="' + name + ' 照片 ' + (idx + 1) + '" loading="lazy">'
+          + '<img src="' + src + '" alt="' + name + ' 照片 ' + (idx + 1) + '" loading="' + loading + '">'
           + '</div>';
       }).join('');
       var dots = images.map(function (_, idx) {
@@ -47,7 +49,7 @@ window.PianoApp.initPortfolio = function () {
         +   '<div class="project-slider-dots">' + dots + '</div>'
         + '</div>';
     }
-    return '<div class="project-visual"><img src="' + project.image + '" alt="' + name + '" loading="lazy"></div>';
+    return '<div class="project-visual"><img src="' + project.image + '" alt="' + name + '" loading="eager"></div>';
   }
 
   showcaseEl.innerHTML = projects.map(function (project, i) {
