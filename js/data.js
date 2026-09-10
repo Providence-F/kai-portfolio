@@ -55,6 +55,20 @@ window.PianoApp.data = {
       techEn: ["Project Management", "Science Curation", "Operations"],
       link: "#",
     },
+    {
+      id: "4",
+      name: "雅诗兰黛 AI 焦点小组 · 主持人工作台",
+      nameEn: "Elda AI Focus Group · Moderator Console",
+      description: "实习期（觅深 Mizzen）负责雅诗兰黛 AI 焦点小组（FGD）智能辅助系统的主持人端设计与开发。用单文件 HTML 在 TraeCode IDE 里做出高保真可交互原型：实时逐字稿、AI 实时辅助、发言占比环图、题目卡片与全流程状态。并从产品方案、功能清单、5 份 PRD 到研发交接文档，跑完了 0→1 的完整产品流程。",
+      descriptionEn: "Internship at Mizzen — I owned the moderator-side design & development for the Estée Lauder AI Focus Group (FGD) intelligent assistance system. Built high-fidelity interactive prototypes as single-file HTML in TraeCode IDE: real-time transcript, AI live-assist, a speak-share donut chart, question cards and full-flow states. Also took the product through solution design, feature list, 5 PRDs, and dev handoff — a complete 0→1 flow.",
+      year: "2026",
+      category: "AI 产品",
+      categoryEn: "AI Product",
+      image: "assets/images/fgd-workbench.png",
+      tech: ["产品设计", "HTML/CSS", "原型开发"],
+      techEn: ["Product Design", "HTML/CSS", "Prototyping"],
+      link: "https://providence-f.github.io/kai-portfolio/focus-group/workbench.html",
+    },
   ],
 
   experiences: [
@@ -177,6 +191,45 @@ window.PianoApp.data = {
           titleZh: "话术审核与 SOP",
           titleEn: "Script Audit & SOP",
           description: "审核销售团队电话录音与话术，提炼高转化话术模板并输出 SOP；通过用户画像分析判断客户真实需求与付费意愿，优化线索分层标准。"
+        }
+      ]
+    },
+    {
+      id: "6",
+      orgName: "觅深 Mizzen",
+      orgNameEn: "Mizzen",
+      orgLocation: "上海",
+      orgLocationEn: "Shanghai",
+      tags: ["AI 产品", "产品设计", "原型开发"],
+      tagsEn: ["AI Product", "Product Design", "Prototyping"],
+      position: "产品设计实习生 · 雅诗兰黛 AI 焦点小组（FGD）智能辅助系统",
+      positionEn: "Product Design Intern · Estée Lauder AI Focus Group (FGD)",
+      startDate: "2026-07",
+      endDate: "2026-09",
+      roles: [
+        {
+          titleZh: "产品设计与需求工程",
+          titleEn: "Design & Requirements",
+          description: "围绕雅诗兰黛 AI 焦点小组（FGD）智能辅助系统，从竞品调研、产品方案论证、MVP 方案、功能清单到三阶段交付规划，完整走过 0→1 产品流程；构建界面标注清单与关键帧需求文档，把客户语言转化为可交付的需求。",
+          descriptionEn: "Owned the 0→1 product flow around the Estée Lauder AI Focus Group (FGD) assistant — competitive research, solution argumentation, MVP plan, feature list, and 3-phase delivery planning; produced interface annotation lists and keyframe requirement docs, turning client language into actionable requirements."
+        },
+        {
+          titleZh: "PRD 与研发交接",
+          titleEn: "PRD & Dev Handoff",
+          description: "产出 5 份 PRD、研发交接文档、Demo 验收清单与项目排期表，实现客户（雅诗兰黛 CMI&IT）到销售、研发的跨端衔接。",
+          descriptionEn: "Produced 5 PRDs, a dev handoff doc, a demo acceptance checklist, and a project schedule, bridging the client (Estée Lauder CMI&IT) and the sales & engineering teams."
+        },
+        {
+          titleZh: "三端高保真原型",
+          titleEn: "Hi-fi Prototyping",
+          description: "在 TraeCode IDE 用单文件 HTML 完成主持人工作台、受访者 Pad、大屏三端高保真可交互原型，配套 31 份设计规范与 PRD 标注层，落地「原型即文档」。",
+          descriptionEn: "Built high-fidelity interactive prototypes for all three ends (moderator console, respondent Pad, big screen) as single-file HTML in TraeCode IDE, plus 31 design-spec files and a PRD annotation layer — 'prototype-as-document'."
+        },
+        {
+          titleZh: "跨端协作与纪要",
+          titleEn: "Cross-team Collaboration",
+          description: "与客户、销售、研发多方对接，参与 15+ 场产品讨论会并当日整理纪要，持续转化为需求更新。",
+          descriptionEn: "Collaborated across client, sales, and engineering; joined 15+ product discussions and wrote meeting notes the same day, continuously converting them into requirement updates."
         }
       ]
     },
