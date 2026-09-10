@@ -3,6 +3,20 @@ window.PianoApp = window.PianoApp || {};
 window.PianoApp.data = {
   projects: [
     {
+      id: "4",
+      name: "雅诗兰黛 AI 焦点小组 · 主持人工作台",
+      nameEn: "Elda AI Focus Group · Moderator Console",
+      description: "实习期（觅深 Mizzen）负责雅诗兰黛 AI 焦点小组（FGD）智能辅助系统的主持人端设计与开发。用单文件 HTML 在 TraeCode IDE 里做出高保真可交互原型：实时逐字稿、AI 实时辅助、发言占比环图、题目卡片与全流程状态。并从产品方案、功能清单、5 份 PRD 到研发交接文档，跑完了 0→1 的完整产品流程。",
+      descriptionEn: "Internship at Mizzen — I owned the moderator-side design & development for the Estée Lauder AI Focus Group (FGD) intelligent assistance system. Built high-fidelity interactive prototypes as single-file HTML in TraeCode IDE: real-time transcript, AI live-assist, a speak-share donut chart, question cards and full-flow states. Also took the product through solution design, feature list, 5 PRDs, and dev handoff — a complete 0→1 flow.",
+      year: "2026",
+      category: "AI 产品",
+      categoryEn: "AI Product",
+      image: "assets/images/fgd-workbench.png",
+      tech: ["产品设计", "HTML/CSS", "原型开发"],
+      techEn: ["Product Design", "HTML/CSS", "Prototyping"],
+      link: "https://providence-f.github.io/kai-portfolio/focus-group/moderator-hub.html",
+    },
+    {
       id: "1",
       name: "深度调研系统 / Research OS",
       nameEn: "Research OS",
@@ -54,20 +68,6 @@ window.PianoApp.data = {
       tech: ["项目管理", "科普策展", "运营传播"],
       techEn: ["Project Management", "Science Curation", "Operations"],
       link: "#",
-    },
-    {
-      id: "4",
-      name: "雅诗兰黛 AI 焦点小组 · 主持人工作台",
-      nameEn: "Elda AI Focus Group · Moderator Console",
-      description: "实习期（觅深 Mizzen）负责雅诗兰黛 AI 焦点小组（FGD）智能辅助系统的主持人端设计与开发。用单文件 HTML 在 TraeCode IDE 里做出高保真可交互原型：实时逐字稿、AI 实时辅助、发言占比环图、题目卡片与全流程状态。并从产品方案、功能清单、5 份 PRD 到研发交接文档，跑完了 0→1 的完整产品流程。",
-      descriptionEn: "Internship at Mizzen — I owned the moderator-side design & development for the Estée Lauder AI Focus Group (FGD) intelligent assistance system. Built high-fidelity interactive prototypes as single-file HTML in TraeCode IDE: real-time transcript, AI live-assist, a speak-share donut chart, question cards and full-flow states. Also took the product through solution design, feature list, 5 PRDs, and dev handoff — a complete 0→1 flow.",
-      year: "2026",
-      category: "AI 产品",
-      categoryEn: "AI Product",
-      image: "assets/images/fgd-workbench.png",
-      tech: ["产品设计", "HTML/CSS", "原型开发"],
-      techEn: ["Product Design", "HTML/CSS", "Prototyping"],
-      link: "https://providence-f.github.io/kai-portfolio/focus-group/workbench.html",
     },
   ],
 
