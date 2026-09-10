@@ -1,0 +1,211 @@
+/* ============================================================
+ * Mizzen Focus Group · 主持人端共享设计系统 · v2.0 深色主题
+ * 风格：藏青夜画布 + 亮藏青强调 + 金/粉标签 + 红警示 + 金属光泽控件
+ * 依赖：../elc-data-lake-design/tokens.css
+ * ============================================================ */
+
+:root{
+  /* 画布与面 */
+  --canvas:#0E101C;      /* 藏青夜画布 */
+  --card:#171A2A;        /* 卡片/弹层面 */
+  --card-2:#20233A;      /* 次级面（输入框底、分段器轨） */
+  --line:#262A3D;        /* 统一描边/分割线 */
+  /* 信息主色（深色反转：亮字阶） */
+  --ink:#F0EEE6;
+  --ink-2:#C6C8D6;
+  --accent:#8E96C6;      /* 亮藏青：文字强调 */
+  --accent-fill:#39406B; /* 藏青实底：主按钮/填充 */
+  --accent-hi:#4A5180;   /* accent-fill hover */
+  /* 灰阶覆写（ELC 令牌反转） */
+  --grey-black:#F0EEE6;--grey-01:#D8DAE4;--grey-02:#9CA0B4;--grey-03:#686C82;--grey-04:#20233A;--grey-05:#151830;
+  /* 标签色 */
+  --gold-ink:#C9A96A;--gold-bg:rgba(197,166,108,.16);--gold-line:#8A7248;
+  --pink-ink:#D986A8;--pink-bg:rgba(201,109,145,.18);
+  /* 金属光泽（白色高光在深底上同样成立） */
+  --metal:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.02) 45%,rgba(0,0,0,.14));
+  --metal-hi:inset 0 1px 0 rgba(255,255,255,.22);
+  /* 卡片 */
+  --card-shadow:0 1px 3px rgba(0,0,0,.35);
+  --mask:rgba(0,0,0,.5);
+  /* 通用语义 token（双主题：深色为默认，浅色见 html.light 覆写块） */
+  --ghost-line:rgba(255,255,255,.5);        /* 幽灵按钮描边 */
+  --ghost-line-soft:rgba(255,255,255,.35);  /* 幽灵按钮弱描边 */
+  --ghost-ink:rgba(255,255,255,.55);        /* 幽灵按钮文字 */
+  --wash:rgba(255,255,255,.06);             /* hover 提亮洗色 */
+  --wash-strong:rgba(255,255,255,.12);      /* hover 强洗色 */
+  --hairline:rgba(255,255,255,.08);         /* 玻璃卡内发丝线 */
+  --chip-bg:rgba(38,42,61,.72);             /* chip/tag/pill 底 */
+  --glass:rgba(23,26,42,.88);               /* 玻璃浮层底（菜单/提示窗） */
+  --glass-line:rgba(255,255,255,.12);       /* 玻璃浮层描边 */
+  --glass-grad:linear-gradient(160deg,rgba(38,42,61,.88),rgba(23,26,42,.55));  /* 毛玻璃卡渐变 */
+  --modal-glass:linear-gradient(180deg,rgba(32,35,58,.88),rgba(23,26,42,.92)); /* 弹窗玻璃渐变 */
+  --veil:rgba(13,16,28,.35);                /* Start 毛玻璃幕底 */
+  --shadow-big:0 24px 48px rgba(0,0,0,.45); /* 浮层大投影 */
+  --field-bg:rgba(255,255,255,.02);         /* 只读字段底 */
+  --gold-edge:rgba(197,166,108,.35);        /* 金色弱描边 */
+  --inset-hi-soft:inset 0 1px 0 rgba(255,255,255,.08); /* 玻璃内高光 */
+}
+
+/* ============================================================
+ * 浅色主题（spec 2026-09-01 浅色主题设计 v1.0 §2/§3）
+ * 撤灰阶反转、锚回 ELC 原生浅色 token；html.light 特异度高于各页 :root
+ * ============================================================ */
+html.light{
+  --canvas:#FAF9F7;--card:#FFFFFF;--card-2:#F5F3EF;--line:#E8E6E1;
+  --ink:#1D1D1D;--ink-2:#595959;
+  --grey-black:#1D1D1D;--grey-01:#595959;--grey-02:#767676;--grey-03:#A8A8A8;--grey-04:#E8E6E1;--grey-05:#F7F5F1;
+  --accent:#363B55;--accent-fill:#040A2B;--accent-hi:#363B55;
+  --gold-ink:#9A7B4F;--gold-bg:rgba(154,123,79,.10);--gold-line:#C2A878;
+  --pink-ink:#B05577;--pink-bg:rgba(176,85,119,.10);
+  --metal:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 45%,rgba(0,0,0,.03));
+  --metal-hi:inset 0 1px 0 rgba(255,255,255,.6);
+  --card-shadow:0 1px 3px rgba(29,29,29,.08);
+  --mask:rgba(29,29,29,.42);
+  /* 通用语义 token 浅色值 */
+  --ghost-line:rgba(29,29,29,.40);--ghost-line-soft:rgba(29,29,29,.30);--ghost-ink:rgba(29,29,29,.55);
+  --wash:rgba(29,29,29,.05);--wash-strong:rgba(29,29,29,.09);--hairline:rgba(29,29,29,.08);
+  --chip-bg:rgba(29,29,29,.04);--glass:rgba(255,255,255,.92);--glass-line:rgba(29,29,29,.08);
+  --glass-grad:linear-gradient(160deg,#FFFFFF,#FBFAF8);--modal-glass:linear-gradient(180deg,#FFFFFF,#FCFBF9);
+  --veil:rgba(250,249,247,.62);--shadow-big:0 18px 40px rgba(29,29,29,.14);
+  --field-bg:#F5F3EF;--gold-edge:rgba(154,123,79,.35);--inset-hi-soft:inset 0 1px 0 rgba(255,255,255,.65);
+}
+html,body{height:100%}
+body{
+  background:var(--canvas);color:var(--ink-2);
+  font-family:var(--font-family-cn);
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-family:var(--font-family-num)}
+
+/* ---------- 通用按钮（金属光泽激活态） ---------- */
+/* ---------- 按钮（spec v2.12）：源码直用——幽灵白描边 + hover 蓝色实底点亮 + 辉光 ---------- */
+.mbtn{
+  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;
+  border:1px solid var(--ghost-line);background:transparent;border-radius:999px;
+  font-size:12px;font-family:var(--font-family-cn);color:var(--ghost-ink);cursor:pointer;
+  user-select:none;transition:.5s ease;white-space:nowrap;
+}
+.mbtn:hover{
+  color:#fff;background:#008cff;border-color:#008cff;
+  text-shadow:0 0 5px #fff,0 0 10px #fff,0 0 20px #fff;
+  box-shadow:0 0 5px #008cff,0 0 20px #008cff,0 0 50px #008cff;
+}
+.mbtn.primary{
+  background:var(--accent-fill) var(--metal);box-shadow:var(--metal-hi);
+  border:none;color:var(--white);font-weight:var(--font-weight-medium);
+}
+.mbtn.primary:hover{background:var(--accent-hi) var(--metal);text-shadow:none;box-shadow:var(--metal-hi);border:none;color:var(--white)}
+.mbtn.danger{color:var(--error-100);background:rgba(255,37,29,.12);border:none;font-weight:var(--font-weight-medium)}
+.mbtn.danger:hover{background:var(--error-100) var(--metal);box-shadow:var(--metal-hi);color:var(--white);text-shadow:none}
+.mbtn:disabled{opacity:.35;cursor:not-allowed}
+.mbtn svg{width:14px;height:14px}
+
+/* ---------- 输入控件 ---------- */
+.m-input{
+  height:36px;padding:0 12px;border:1px solid var(--line);border-radius:8px;
+  background:var(--card-2);font-size:13px;font-family:var(--font-family-cn);
+  color:var(--ink);outline:none;transition:border-color .15s;box-sizing:border-box;width:100%;
+}
+.m-input:focus{border-color:var(--gold-line)}
+.m-input::placeholder{color:var(--grey-03)}
+.m-lbl{display:block;font-size:11px;color:var(--grey-02);letter-spacing:.1em;margin-bottom:6px}
+
+/* ---------- 标签（金/粉/中性） ---------- */
+.mtag{
+  display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:4px;
+  font-size:10px;color:var(--gold-ink);background:var(--gold-bg);
+}
+.mtag.choice{color:var(--pink-ink);background:var(--pink-bg)}
+.mtag.neutral{color:var(--grey-02);background:var(--card-2);border:1px solid var(--line)}
+
+/* ---------- chip ---------- */
+.mchip{
+  display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;
+  background:var(--card-2);border:1px solid var(--line);border-radius:999px;
+  font-size:11px;color:var(--ink-2);white-space:nowrap;
+}
+.mchip svg{width:11px;height:11px;color:var(--grey-02);flex:none}
+.mchip b{font-family:var(--font-family-num);font-weight:var(--font-weight-medium);color:var(--ink)}
+
+/* ---------- 状态 pill（录音中/已暂停） ---------- */
+.mpill{
+  display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;
+  border-radius:999px;font-size:11px;white-space:nowrap;
+}
+.mpill .dot{width:5px;height:5px;border-radius:50%}
+.mpill.live{background:rgba(255,37,29,.12);color:var(--error-100);font-weight:var(--font-weight-medium)}
+.mpill.live .dot{background:var(--error-100);box-shadow:0 0 0 3px rgba(255,37,29,.18);animation:mbreath 2s ease-in-out infinite}
+.mpill.paused{background:rgba(255,255,255,.06);color:var(--grey-01)}
+.mpill.paused .dot{background:var(--grey-02)}
+@keyframes mbreath{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ---------- 头像（藏青同色系） ---------- */
+.mavatar{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  border-radius:50%;color:var(--white);font-weight:var(--font-weight-medium);
+  background:#3F4669;
+}
+.mavatar.d2{background:#565C7E}.mavatar.d3{background:#767C9E}
+
+/* ---------- 卡片 ---------- */
+.mcard{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--card-shadow);
+  transition:border-color .25s ease,box-shadow .3s ease;
+}
+/* 卡片 hover 微光（v2.8 收敛，用户反馈「淡一点小一点」）：金墨细环 + 紧贴柔光，零位移 */
+.mcard:hover{
+  border-color:rgba(233,200,130,.25);
+  box-shadow:0 0 0 1px rgba(233,200,130,.10),0 0 12px rgba(201,169,106,.08),0 6px 16px rgba(0,0,0,.30);
+}
+html.light .mcard:hover{
+  border-color:rgba(154,123,79,.22);
+  box-shadow:0 0 0 1px rgba(154,123,79,.08),0 4px 12px rgba(29,29,29,.10);
+}
+
+/* ---------- tiny caps 分区标签 ---------- */
+.mcap{font-size:11px;color:var(--grey-02);letter-spacing:.12em}
+
+/* ---------- 弹窗（Apple 美学 · spec v2.5 §1.8）：蒙层微模糊 + 毛玻璃面板 + 弹性入场 ---------- */
+.mmodal{
+  position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+  background:var(--mask);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+}
+.mmodal.show{display:flex}
+.mmodal .mbox{
+  position:relative;
+  background:var(--modal-glass);
+  backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);
+  border:1px solid var(--glass-line);border-radius:16px;
+  box-shadow:var(--shadow-big),var(--inset-hi-soft);
+  padding:24px;max-width:520px;width:90vw;max-height:82vh;overflow:auto;
+  animation:modalIn .26s cubic-bezier(.32,.72,0,1);
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mmodal .mbox{animation:none}}
+/* 弹窗关闭钮（spec v3.0 §1.8 内容类幽灵 X）：右上角，hover 微亮 */
+.mclose{
+  position:absolute;top:14px;right:14px;width:28px;height:28px;
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  border:none;border-radius:8px;background:transparent;cursor:pointer;
+  color:var(--grey-03);transition:background .15s,color .15s;
+}
+.mclose:hover{background:var(--wash);color:var(--grey-01)}
+.mclose svg{width:14px;height:14px}
+
+/* ---------- 主题切换钮（浅色主题 spec v1.0）：右上角 28px 圆形幽灵，双端共用 ---------- */
+.theme-btn{
+  width:28px;height:28px;border-radius:50%;flex:none;cursor:pointer;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--ghost-line-soft);background:transparent;color:var(--grey-02);
+  transition:all .25s ease;user-select:none;
+}
+.theme-btn:hover{color:var(--ink);border-color:var(--ghost-line);background:var(--wash)}
+.theme-btn svg{width:14px;height:14px}
+
+/* ---------- 浅色主题组件覆写（spec v1.0 §4/§5）：发光 → 实底点亮，无任何彩色辉光 ---------- */
+html.light .mbtn:hover{
+  color:#fff;background:var(--accent-fill);border-color:var(--accent-fill);
+  text-shadow:none;box-shadow:none;transition:.25s ease;
+}
+html.light .mbtn.danger:hover{box-shadow:var(--metal-hi)}
