@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FGD Moderator Workbench</title>
+<link rel="stylesheet" href="../elc-data-lake-design/tokens.css">
+<link rel="stylesheet" href="../elc-data-lake-design/components.css">
+<style>
+/* ============================================================
+ * FGD 主持人工作台 · v3.0 深色主题（按 主持人端深色主题 spec v2.0）
+ * 配色: 画布 #0E101C(藏青夜) / 线统一 var(--line) / 卡片 #171A2A=描边定义(非阴影)
+ *       信息主色: 亮藏青 accent(标题/关键数字) 金(开放)·粉(选择) 警示: 红
+ * ============================================================ */
+html,body{height:100%;overflow:hidden}
+body{background:var(--canvas);font-family:var(--font-family-cn);color:var(--ink-2);-webkit-font-smoothing:antialiased}
+:root{
+  /* ELC 浅色令牌 → 深色主题覆写（灰阶反转为亮字阶） */
+  --grey-black:#F0EEE6;--grey-01:#D8DAE4;--grey-02:#9CA0B4;--grey-03:#686C82;--grey-04:#20233A;--grey-05:#151830;
+  --gold-ink:#C9A96A;--gold-bg:rgba(197,166,108,.16);--gold-line:#8A7248;
+  --pink-ink:#D986A8;--pink-bg:rgba(201,109,145,.18);
+  --ink:#F0EEE6;--ink-2:#C6C8D6;
+  --accent:#8E96C6;      /* 亮藏青：文字强调（题号/当前环节/AI 标记/loader） */
+  --accent-fill:#39406B; /* 藏青实底：主按钮/勾选/徽章/进度填充 */
+  --card:#171A2A;--line:#262A3D;--canvas:#0E101C;
+  --metal:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.02) 45%,rgba(0,0,0,.14));
+  --metal-hi:inset 0 1px 0 rgba(255,255,255,.22);
+  /* 通用语义 token（与 mod-system.css 同源；浅色值见下方 html.light 覆写块） */
+  --ghost-line:rgba(255,255,255,.5);--ghost-line-soft:rgba(255,255,255,.35);--ghost-ink:rgba(255,255,255,.55);
+  --wash:rgba(255,255,255,.06);--wash-strong:rgba(255,255,255,.12);--hairline:rgba(255,255,255,.08);
+  --chip-bg:rgba(38,42,61,.72);--glass:rgba(23,26,42,.88);--glass-line:rgba(255,255,255,.12);
+  --glass-grad:linear-gradient(160deg,rgba(38,42,61,.88),rgba(23,26,42,.55));
+  --modal-glass:linear-gradient(180deg,rgba(32,35,58,.88),rgba(23,26,42,.92));
+  --veil:rgba(13,16,28,.35);--shadow-big:0 24px 48px rgba(0,0,0,.45);
+  --field-bg:rgba(255,255,255,.02);--gold-edge:rgba(197,166,108,.35);
+  --inset-hi-soft:inset 0 1px 0 rgba(255,255,255,.08);
+  --card-shadow:0 1px 3px rgba(0,0,0,.35);--mask:rgba(0,0,0,.5);
+}
+/* ============================================================
+ * 浅色主题（浅色主题 spec v1.0 §2/§3）：html.light 特异度高于 :root
+ * ============================================================ */
+html.light{
+  --canvas:#FAF9F7;--card:#FFFFFF;--card-2:#F5F3EF;--line:#E8E6E1;
+  --ink:#1D1D1D;--ink-2:#595959;
+  --grey-black:#1D1D1D;--grey-01:#595959;--grey-02:#767676;--grey-03:#A8A8A8;--grey-04:#E8E6E1;--grey-05:#F7F5F1;
+  --accent:#363B55;--accent-fill:#040A2B;--accent-hi:#363B55;
+  --gold-ink:#9A7B4F;--gold-bg:rgba(154,123,79,.10);--gold-line:#C2A878;
+  --pink-ink:#B05577;--pink-bg:rgba(176,85,119,.10);
+  --metal:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0) 45%,rgba(0,0,0,.03));
+  --metal-hi:inset 0 1px 0 rgba(255,255,255,.6);
+  --ghost-line:rgba(29,29,29,.40);--ghost-line-soft:rgba(29,29,29,.30);--ghost-ink:rgba(29,29,29,.55);
+  --wash:rgba(29,29,29,.05);--wash-strong:rgba(29,29,29,.09);--hairline:rgba(29,29,29,.08);
+  --chip-bg:rgba(29,29,29,.04);--glass:rgba(255,255,255,.92);--glass-line:rgba(29,29,29,.08);
+  --glass-grad:linear-gradient(160deg,#FFFFFF,#FBFAF8);--modal-glass:linear-gradient(180deg,#FFFFFF,#FCFBF9);
+  --veil:rgba(250,249,247,.62);--shadow-big:0 18px 40px rgba(29,29,29,.14);
+  --field-bg:#F5F3EF;--gold-edge:rgba(154,123,79,.35);--inset-hi-soft:inset 0 1px 0 rgba(255,255,255,.65);
+  --card-shadow:0 1px 3px rgba(29,29,29,.08);--mask:rgba(29,29,29,.42);
+}
+/* 主题切换钮（与 mod-system.css 同源，本页未引用共享层故内置） */
+.theme-btn{
+  width:28px;height:28px;border-radius:50%;flex:none;cursor:pointer;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--ghost-line-soft);background:transparent;color:var(--grey-02);
+  transition:all .25s ease;user-select:none;
+}
+.theme-btn:hover{color:var(--ink);border-color:var(--ghost-line);background:var(--wash)}
+.theme-btn svg{width:14px;height:14px}
+.num{font-family:var(--font-family-num)}
+
+/* ---------- 骨架 ---------- */
+#app{
+  display:grid;height:100vh;box-sizing:border-box;
+  padding:20px 24px;gap:24px;
+  --ol-w:264px;--as-w:280px;
+  grid-template-columns:var(--ol-w) 1fr var(--as-w);
+  grid-template-rows:56px 1fr 64px;
+  grid-template-areas:"top top top" "outline content assist" "foot foot assist";
+}
+#app.ol-collapsed{grid-template-columns:48px 1fr var(--as-w)}
+
+/* ---------- 卡片语言（spec 3） ---------- */
+.card-pop{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--card-shadow);
+}
+
+/* ---------- 通用：无边框按钮 / 图标钮 ---------- */
+/* 通用按钮（spec v2.12）：源码直用——幽灵白描边 + hover 蓝色实底点亮 + 辉光 */
+.gbtn{
+  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;
+  border:1px solid var(--ghost-line);background:transparent;border-radius:999px;
+  font-size:12px;font-family:var(--font-family-cn);color:var(--ghost-ink);cursor:pointer;
+  user-select:none;transition:.5s ease;white-space:nowrap;
+}
+.gbtn:hover{
+  color:#fff;background:#008cff;border-color:#008cff;
+  text-shadow:0 0 5px #fff,0 0 10px #fff,0 0 20px #fff;
+  box-shadow:0 0 5px #008cff,0 0 20px #008cff,0 0 50px #008cff;
+}
+.gbtn.on{background:var(--accent-fill) var(--metal);box-shadow:var(--metal-hi);color:var(--white);border-color:transparent}
+.gbtn.on:hover{background:var(--accent-hi) var(--metal)}
+.gbtn.danger{color:var(--error-100);background:rgba(255,37,29,.10);margin-left:8px;font-weight:var(--font-weight-medium);border-color:rgba(255,37,29,.4)}
+.gbtn.danger:hover{background:var(--error-100) var(--metal);box-shadow:var(--metal-hi);color:var(--white);border-color:var(--error-100)}
+/* primary：全站唯一主行动语义位（spec v3.0 §6.2 Start Question），藏青金属实底 */
+.gbtn.primary{background:var(--accent-fill) var(--metal);box-shadow:var(--metal-hi);border-color:transparent;color:var(--white);font-weight:var(--font-weight-medium)}
+.gbtn.primary:hover{background:var(--accent-hi) var(--metal);border-color:transparent;color:var(--white);text-shadow:none;box-shadow:var(--metal-hi)}
+.gbtn svg{width:14px;height:14px}
+.gbtn.icon{width:32px;height:32px;padding:0;justify-content:center;color:var(--grey-02)}
+.gbtn.icon:hover{color:var(--grey-black)}
+.gbtn.icon svg{width:16px;height:16px}
+.icon-btn{
+  width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;
+  border:none;background:transparent;border-radius:6px;color:var(--grey-02);cursor:pointer;
+  transition:background-color .15s,color .15s;flex:none;padding:0;
+}
+.icon-btn:hover{background:var(--wash);color:var(--grey-black)}
+.icon-btn svg{width:14px;height:14px}
+.cap-label{font-size:11px;color:var(--grey-02);letter-spacing:.12em}
+.tag{
+  display:inline-flex;align-items:center;height:18px;padding:0 7px;
+  font-size:10px;background:var(--chip-bg);color:var(--ink-2);border-radius:999px;
+}
+.avatar{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  border-radius:50%;color:var(--white);font-weight:var(--font-weight-medium);
+}
+/* ---------- 组件词汇（组件词汇重建 spec 2） ---------- */
+.hd-ic{width:16px;height:16px;color:var(--grey-02);flex:none}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;
+  background:var(--chip-bg);border:1px solid var(--line);border-radius:999px;font-size:11px;color:var(--ink-2);white-space:nowrap;
+}
+.chip svg{width:11px;height:11px;color:var(--grey-02);flex:none}
+.chip b{font-family:var(--font-family-num);font-weight:var(--font-weight-medium);color:var(--grey-black)}
+.spill{
+  display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;
+  border-radius:999px;font-size:11px;white-space:nowrap;
+}
+.spill .live-dot{width:5px;height:5px}
+.spill.live{background:rgba(255,37,29,.10);color:var(--error-100);font-weight:var(--font-weight-medium)}
+.spill.live .live-dot{background:var(--error-100);animation:breath 2s ease-in-out infinite}
+@keyframes breath{0%,100%{opacity:1}50%{opacity:.3}}
+.spill.paused{background:var(--wash);color:var(--grey-01)}
+.spill.paused .live-dot{background:var(--grey-02)}
+.icon-chip{
+  width:22px;height:22px;border-radius:6px;background:var(--accent-fill) var(--metal);box-shadow:var(--metal-hi);color:var(--white);
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+}
+.icon-chip svg{width:12px;height:12px}
+.badge-n{
+  min-width:16px;height:16px;padding:0 5px;border-radius:999px;
+  background:var(--accent-fill) var(--metal);box-shadow:var(--metal-hi);color:var(--white);
+  font-family:var(--font-family-num);font-size:10px;font-weight:var(--font-weight-medium);
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+}
+
+/* ---------- 顶栏（spec 6：1fr auto 1fr，身份静默 / 计时主角 / 控制分化） ---------- */
+.topbar{grid-area:top;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 4px}
+.topbar .grp{display:flex;align-items:center;gap:12px;min-width:0}
+.topbar .grp:first-child .session-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .grp.acts{justify-content:flex-end;gap:8px}
+.topbar .grp.mid{justify-content:center;gap:10px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--error-100);flex:none;box-shadow:0 0 0 3px rgba(255,37,29,.15)}
+.live-dot.sm{width:5px;height:5px;display:inline-block;vertical-align:1px;margin-right:5px}
+.session-name{font-size:14px;font-weight:var(--font-weight-medium);color:var(--ink)}
+.timer{font-size:20px;font-weight:var(--font-weight-medium);letter-spacing:.06em;color:var(--ink)}
+.gbtn.danger{margin-left:8px}
+
+/* ---------- 左栏：访谈大纲（展开态，右侧分界线 var(--line)） ---------- */
+.outline{grid-area:outline;display:flex;flex-direction:column;min-height:0;padding:0 16px 0 4px;border-right:1px solid var(--line);position:relative}
+.ol-resizer{position:absolute;top:0;right:-5px;width:9px;height:100%;cursor:col-resize;z-index:5}
+.ol-resizer:hover,.ol-resizer.active{background:linear-gradient(to right,transparent,rgba(255,255,255,.08),transparent)}
+#app.ol-collapsed .outline{display:none}
+/* 眉头：普通文字眉头（无背景） */
+.ol-hd{display:flex;align-items:center;gap:8px;height:32px;flex:none}
+.ol-hd .t{font-size:14px;font-weight:var(--font-weight-medium);color:var(--ink)}
+.ol-hd .spacer{flex:1}
+.ol-bar{height:2px;background:var(--line);border-radius:1px;overflow:hidden;margin:4px 0;flex:none}
+.ol-bar i{display:block;height:100%;background:var(--accent-fill) var(--metal);transition:width .3s}
+.ol-list{flex:1;overflow-y:auto;min-height:0;padding:4px 4px 8px;scrollbar-width:none}
+.ol-list::-webkit-scrollbar{width:0}
+/* 环节行：tiny caps；hover 浮出环节指引卡 */
+.sec-row{display:flex;align-items:baseline;gap:8px;height:22px;margin-top:14px;font-size:11px;letter-spacing:.08em;color:var(--grey-02);cursor:default}
+.sec-row:first-child{margin-top:4px}
+.sec-row.current{color:var(--accent)}
+.sec-row .s-name{flex:1}
+.sec-row .s-count{font-family:var(--font-family-num);font-size:10px;letter-spacing:0}
+/* 题目行：左身份(序号) / 中内容(全文) / 右动作(hover 出现) */
+.q-row{
+  display:flex;align-items:flex-start;gap:8px;position:relative;
+  padding:7px 8px;margin:0 -4px;border:1px solid transparent;border-radius:10px;cursor:pointer;
+}
+.q-row:hover,.q-row.current{
+  background:var(--card);border-color:var(--line);box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.q-no{display:flex;flex-direction:column;align-items:flex-start;gap:3px;flex:none;width:34px;margin-top:3px}
+.q-no .qn{font-family:var(--font-family-num);font-size:11px;color:var(--grey-02)}
+.q-deep{display:inline-block;width:3px;height:3px;border-radius:50%;background:var(--accent);margin-left:4px;vertical-align:2px}
+.q-text{flex:1;min-width:0;font-size:12px;line-height:18px;color:var(--grey-01)}
+.q-row.current .q-text{color:var(--ink);font-weight:var(--font-weight-medium)}
+.q-row.done .q-text,.q-row.done .q-no{color:var(--grey-02)}
+.q-type{font-size:10px;border-radius:4px;padding:1px 5px;color:var(--gold-ink);background:var(--gold-bg)}
+.q-type.choice{color:var(--pink-ink);background:var(--pink-bg)}
+/* 题目行状态（spec v3.0 §6.4）：active 金色实点 + 行微高亮；done 灰化沿用既有 .done */
+.q-row.active{background:var(--card);border-color:var(--gold-edge)}
+.q-row.active .qn{color:var(--gold-ink)}
+.q-row.active .qn::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--gold-ink);margin-right:4px;vertical-align:1px}
+/* 右动作簇：常驻占位，opacity 切换——hover 前后零位移（spec 5.1 交互细节）；打勾已移除（spec v3.1 §11），done 仅由 Start 机制派生 */
+.q-acts{display:inline-flex;align-items:center;gap:4px;flex:none;margin-top:1px}
+.q-guide{
+  width:20px;height:20px;display:inline-flex;opacity:0;align-items:center;justify-content:center;
+  border:none;background:transparent;border-radius:5px;color:var(--grey-03);cursor:pointer;padding:0;
+  transition:opacity .12s,color .12s;
+}
+.q-row:hover .q-guide,.q-row.current .q-guide{opacity:1;color:var(--grey-02)}
+.q-guide:hover{color:var(--grey-black);background:var(--wash)}
+.q-guide svg{width:12px;height:12px}
+.q-guide.on{color:var(--accent)}
+
+/* ---------- 左栏：收起态窄轨（48px） ---------- */
+.rail{grid-area:outline;display:none;flex-direction:column;align-items:center;min-height:0;padding:4px 0;border-right:1px solid var(--line)}
+#app.ol-collapsed .rail{display:flex}
+.rail-count{font-family:var(--font-family-num);font-size:10px;color:var(--grey-02);margin:4px 0 8px}
+.rail-list{flex:1;overflow-y:auto;min-height:0;scrollbar-width:none;display:flex;flex-direction:column;align-items:center}
+.rail-list::-webkit-scrollbar{width:0}
+.rail-sec{width:8px;height:1px;background:var(--line);margin:6px 0}
+.rail-q{
+  width:34px;height:24px;display:flex;align-items:center;justify-content:center;
+  border:none;background:transparent;border-radius:999px;padding:0;
+  font-family:var(--font-family-num);font-size:10px;color:var(--grey-02);cursor:pointer;
+  transition:background-color .15s,color .15s,opacity .15s;
+}
+.rail-q:hover{background:var(--wash);color:var(--grey-black)}
+.rail-q.done{opacity:.4}
+.rail-q.current{background:var(--accent-fill) var(--metal);box-shadow:var(--metal-hi);color:var(--white);opacity:1}
+/* rail 收起态同步题目状态（spec v3.0 §6.4）：active 金调 pill */
+.rail-q.active{color:var(--gold-ink);background:var(--gold-bg)}
+.rail-q.active.current{background:var(--accent-fill) var(--metal);color:var(--white)}
+
+/* ---------- 浮层：题目指引 popover / 窄轨 tooltip（统一卡片语言） ---------- */
+.guide-pop{
+  position:fixed;z-index:60;width:300px;padding:14px 16px;display:none;
+}
+.guide-pop.show{display:block}
+.gp-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.gp-hd .t{font-size:11px;color:var(--grey-02);letter-spacing:.12em}
+.gp-hd .t b{font-family:var(--font-family-num);font-weight:var(--font-weight-medium);letter-spacing:0}
+.gp-hd .sec{font-size:10px;color:var(--grey-02)}
+.gp-guide{font-size:12px;line-height:19px;color:var(--grey-02)}
+.rail-tip{
+  position:fixed;z-index:60;width:260px;padding:12px 14px;display:none;pointer-events:none;
+}
+.rail-tip.show{display:block;animation:popIn .15s ease-out}
+.rt-sec{font-size:11px;color:var(--grey-02);letter-spacing:.08em;margin-bottom:6px}
+.rt-text{font-size:12px;line-height:18px;color:var(--grey-01)}
+@keyframes popIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ---------- 右栏：状态层（发言占比环，直接坐在画布上） ---------- */
+.assist{grid-area:assist;display:flex;flex-direction:column;min-width:0;min-height:0}
+.donut-wrap{padding:8px 4px 0 30px;display:flex;flex-direction:column;gap:10px;align-self:flex-start;flex:none}
+.donut-row{display:flex;align-items:center;gap:14px}
+.donut-cap{font-size:11px;font-style:italic;color:var(--grey-03);letter-spacing:.14em;padding-left:6px}
+.donut-box{position:relative;width:140px;height:140px;flex:none}
+.donut-box circle{fill:none;pointer-events:stroke;cursor:default}
+.donut-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.donut-c .nm{font-size:12px;font-weight:var(--font-weight-medium);color:var(--ink);max-width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;line-height:15px}
+.donut-c .tag{font-size:10px;color:var(--grey-02);margin-top:2px;line-height:12px}
+.donut-c .pc{font-family:var(--font-family-num);font-size:11px;color:var(--grey-02);margin-top:1px;line-height:13px}
+/* 图例：环形图正右方，姓名 + 颜色标记 */
+.dm-legend{display:flex;flex-direction:column;gap:7px;min-width:0;padding-left:10px}
+.dlg-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--grey-01);line-height:16px;white-space:nowrap}
+.dlg-row i{width:8px;height:8px;border-radius:50%;flex:none}
+.dm-tip{position:fixed;z-index:60;padding:6px 10px;font-size:11px;color:var(--grey-01);display:none;pointer-events:none;white-space:nowrap}
+.dm-tip.show{display:block}
+.dm-tip b{font-family:var(--font-family-num);font-weight:var(--font-weight-medium);color:var(--grey-black)}
+
+/* ---------- 中央舞台：题目与大纲眉头同高起排，下分「预提炼(小字斜体置灰) / 实时归纳(正文深色)」两层 ---------- */
+/* 落屏原则（spec v3.1 §11）：中央列不可滚动——题卡 flex 纵向撑满，内容以行数截断收敛于可视区 */
+.content-wrap{grid-area:content;position:relative;min-width:0;min-height:0}
+.content{min-width:0;min-height:0;position:relative;display:flex;justify-content:center;overflow:hidden;border-right:1px solid var(--line);padding-right:32px;margin-right:-8px;height:100%}
+.content::-webkit-scrollbar{width:0}
+.stage{width:760px;max-width:100%;display:flex;flex-direction:column;padding:2px 0 16px;flex:none;height:100%;box-sizing:border-box}
+.qcard{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;transition:opacity .15s ease,transform .15s ease}
+.qcard.out{opacity:0;transform:translateY(-8px)}
+/* 题头：占面积更大的主标题区；flex:none——题头不参与收缩，题干永不截切（spec v3.1 §11） */
+.q-head{display:flex;gap:14px;min-height:44px;flex:none}
+.q-qn{font-family:var(--font-family-num);font-size:17px;font-weight:var(--font-weight-medium);color:var(--accent);flex:none;line-height:38px}
+.q-title{font-size:26px;font-weight:var(--font-weight-medium);color:var(--ink);line-height:38px;letter-spacing:.01em}
+/* 底部内容区（spec v3.0 §7 统一结构）：题干之下统一包裹 .q-body——flex 撑满余量、内部不滚、溢出裁切 */
+.q-body{position:relative;flex:1 1 auto;min-height:0;margin-top:20px;overflow:hidden}
+.q-body .q-opts,.q-body .ig-block,.q-body .qv-list{margin-top:0}
+.ig-block + .qv-list{margin-top:24px}
+.qv-list{margin-top:24px}
+.col-cap{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--grey-02);letter-spacing:.08em;margin-bottom:12px}
+.col-cap b{font-family:var(--font-family-num);font-weight:var(--font-weight-medium);color:var(--ink)}
+/* Interview Guide 纯文本块（spec v3.0 §7.2）：一整段不拆条；落屏收敛——至多 3 行截断（spec v3.1 §11） */
+.ig-block .col-cap{margin-bottom:8px}
+.ig-text{margin:0;font-size:13px;line-height:22px;color:var(--grey-01);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+/* Start 毛玻璃幕（spec v3.0 §6.2 → v3.1 §11）：idle 时覆盖题干之下的整个 AI 分析区——
+   真实毛玻璃：中等不透明度底色 + 中半径 blur，背后文字以模糊虚影透出、不可辨读；
+   面板为全幅矩形（模糊区域完整覆盖、四角零泄漏），圆角由 ::after 内嵌描边框呈现；
+   left/width/top 由 JS 实测题卡内容区，左右与文字区完全贴合——"幕布未启"的舞台隐喻 */
+.start-card{
+  position:absolute;bottom:16px;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  padding:32px;box-sizing:border-box;text-align:center;
+  background:var(--veil);
+  -webkit-backdrop-filter:blur(12px) saturate(150%);
+  backdrop-filter:blur(12px) saturate(150%);
+  box-shadow:var(--shadow-big);
+}
+/* 内嵌圆角描边框：发丝描边 + 顶部内高光，悬浮于磨砂面板之上 */
+.start-card::after{
+  content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;z-index:3;
+  border:1px solid var(--glass-line);
+  box-shadow:var(--inset-hi-soft);
+}
+.start-card[hidden]{display:none}
+.sc-cap{font-size:11px;letter-spacing:.16em;color:var(--gold-ink)}
+.sc-sub{font-size:12px;line-height:18px;color:var(--grey-02);max-width:400px}
+.start-card .gbtn.primary{margin-top:6px}
+/* done 题只读标记（spec v3.0 §6.3）：题号右侧 tiny caps */
+.q-done{font-size:10px;letter-spacing:.14em;color:var(--grey-03);flex:none;line-height:38px}
+/* Cast Answers（spec v3.1 §12）：选项与未答行之间水平居中 */
+.show-ans{display:flex;justify-content:center;margin:14px 0 2px}
+/* Cast Answers 终态（spec v3.1 §12）：已投屏 — 金色实底，不可重复触发；hover 无辉光、无位移 */
+.gbtn.cast-done{background:var(--gold-bg);border-color:var(--gold-line);color:var(--gold-ink);cursor:default}
+.gbtn.cast-done:hover{background:var(--gold-bg);border-color:var(--gold-line);color:var(--gold-ink);text-shadow:none;box-shadow:var(--metal-hi)}
+/* AI 提炼：人名 + 统一冒号线；过往提炼（斜体置灰）→ 当前归纳（正文深色）；
+   落屏收敛（spec v3.1 §11）：每条至多 2 行截断，人名列禁止折行；
+   底部渐隐收尾——溢出行柔和淡出，不生硬切割 */
+.q-body::after{content:"";position:absolute;left:0;right:0;bottom:0;height:52px;z-index:2;pointer-events:none;
+  background:linear-gradient(180deg,transparent,var(--canvas))}
+.qv-row{display:flex;padding:6px 0}
+.qv-name{flex:none;width:88px;white-space:nowrap;text-align:justify;text-align-last:justify;font-size:14px;color:var(--ink);line-height:24px}
+.qv-colon{flex:none;font-size:14px;color:var(--grey-03);line-height:24px}
+.qv-text{flex:1;min-width:0;font-size:14px;line-height:24px;color:var(--ink-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.qv-text .pre{font-style:italic;color:var(--grey-02);margin-right:8px}
+.qv-text .live{color:var(--ink-2)}
+.qv-row.empty .qv-name{color:var(--grey-02)}
+.qv-list .col-cap{margin-bottom:14px}
+/* AI 归纳加载组件（藏青，常转 = AI 持续工作中；内容保持静态） */
+.ai-load{--dim:14px;width:var(--dim);height:var(--dim);position:relative;display:inline-block;flex:none;animation:spin988 2s linear infinite}
+.ai-load i{position:absolute;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.ai-load i:nth-child(1){top:0;left:0}
+.ai-load i:nth-child(2){top:0;right:0}
+.ai-load i:nth-child(3){bottom:0;left:0}
+.ai-load i:nth-child(4){bottom:0;right:0}
+@keyframes spin988{
+  0%{transform:scale(1) rotate(0)}
+  20%,25%{transform:scale(1.3) rotate(90deg)}
+  45%,50%{transform:scale(1) rotate(180deg)}
+  70%,75%{transform:scale(1.3) rotate(270deg)}
+  95%,100%{transform:scale(1) rotate(360deg)}
+}
+/* C2 选择题：按人维度（选项 + 头像堆叠，无百分比） */
+.q-opts{margin-top:30px}
+.opt-row{display:flex;align-items:center;gap:12px;padding:9px 0 2px}
+.opt-letter{font-family:var(--font-family-num);font-size:12px;color:var(--grey-02);width:16px;flex:none}
+.opt-text{font-size:14px;color:var(--ink);flex:1;min-width:0}
+.opt-picks{display:flex;align-items:center}
+.opt-picks .p-dot{width:20px;height:20px;font-size:9px;border-width:1.5px}
+.opt-picks .p-dot+.p-dot{margin-left:-6px}
+.reason{font-size:11px;line-height:17px;color:var(--grey-02);padding-left:28px;margin:4px 0 8px;animation:popIn .2s ease-out}
+.unanswered{font-size:11px;color:var(--grey-03);margin-top:10px}
+/* E 翻页：仅左右箭头，JS 计算与中央栏轴线几何对齐（spec 7.4） */
+.q-nav{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:18px}
+.nav-arrow{
+  width:38px;height:38px;border-radius:50%;border:none;background:transparent;padding:0;
+  color:var(--grey-02);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  transition:background-color .15s,color .15s;
+}
+.nav-arrow:hover:not(:disabled){background:var(--wash);color:var(--grey-black)}
+.nav-arrow:disabled{opacity:.3;cursor:not-allowed}
+.nav-arrow svg{width:20px;height:20px}
+.assist{position:relative}
+/* ---------- AI 提示事件流（spec v2.0）：无卡片，环下方 66px 从上往下长 ---------- */
+.tipstream{margin-top:66px;padding:0 4px;flex:none}
+.ts-idle{display:flex;align-items:center;justify-content:center;gap:8px;font-size:18px;color:var(--ink);letter-spacing:.04em;font-weight:var(--font-weight-medium)}
+.ts-idle svg{width:23px;height:23px;flex:none;color:var(--accent)}
+.tipstream.has-events .ts-idle{margin-bottom:2px}
+/* 事件行：icon + 一句话 + DIN 时间码；未读深色，点击=已读 */
+.ts-row{
+  display:flex;align-items:baseline;gap:9px;padding:7px 8px;margin:0 -8px;border-radius:8px;cursor:pointer;
+  animation:tsIn .2s ease-out;transition:background-color .15s;
+}
+@keyframes tsIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ts-row:hover{background:var(--wash)}
+.ts-row svg{width:14px;height:14px;flex:none;color:var(--gold-ink);position:relative;top:2px}
+.ts-row .tx{flex:1;min-width:0;font-size:12px;line-height:18px;color:var(--ink-2);transition:color .2s}
+.ts-row .tm{flex:none;font-family:var(--font-family-num);font-size:10px;color:var(--grey-03)}
+/* 归档线 */
+.ts-arch{
+  margin-top:4px;padding:4px 8px;margin-left:-8px;border:none;background:none;cursor:pointer;
+  font-size:11px;color:var(--grey-03);letter-spacing:.04em;font-family:var(--font-family-cn);
+  display:inline-flex;align-items:center;gap:4px;border-radius:6px;transition:background-color .15s;
+}
+.ts-arch:hover{background:var(--wash)}
+.ts-arch b{font-family:var(--font-family-num);font-weight:var(--font-weight-medium)}
+/* 归档展开区：纯灰字回看，不可逆回未读 */
+.ts-arch-list[hidden]{display:none}
+.ts-arch-list .ts-row{cursor:default;animation:none;opacity:.75}
+.ts-arch-list .ts-row .tx{color:var(--grey-03)}
+.ts-arch-list .ts-row:hover{background:none}
+.lyr{
+  position:relative;margin-top:auto;margin-bottom:15px;flex:none;height:150px;overflow:hidden;
+  background:var(--glass-grad);
+  -webkit-backdrop-filter:blur(16px) saturate(160%);
+  backdrop-filter:blur(16px) saturate(160%);
+  border:1px solid var(--glass-line);border-radius:12px;
+  box-shadow:var(--shadow-1),var(--inset-hi-soft);
+  transform-origin:bottom center;
+  transition:height .22s cubic-bezier(.4,0,.2,1),opacity .18s ease,transform .22s cubic-bezier(.4,0,.2,1);
+}
+.assist.lyr-off .lyr{height:0;opacity:0;transform:scaleY(.6);border-width:0;pointer-events:none}
+/* 内层滚动：margin-top:auto 让内容贴底，溢出后可正常滚到顶（避开 justify-end 陷阱） */
+.lyr-scroll{
+  position:absolute;inset:0;padding:10px 14px;overflow-y:auto;scrollbar-width:none;
+  display:flex;flex-direction:column;
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 14%);
+  mask-image:linear-gradient(to bottom,transparent,#000 14%);
+}
+.lyr-scroll::-webkit-scrollbar{width:0}
+.lyr-inner{margin-top:auto;display:flex;flex-direction:column}
+/* 书面对话排版：人名：内容，自然换行 */
+.lyr-line{margin:0;padding:3px 0;flex:none;font-size:12px;line-height:19px;color:var(--grey-01);opacity:.2;transition:opacity .3s}
+.lyr-line .nm{font-weight:var(--font-weight-medium);color:var(--grey-01)}
+.lyr-line .tx{min-width:0}
+.lyr-line.o1{opacity:.45}
+.lyr-line.cur{font-size:13px;opacity:1}
+.lyr-line.cur .nm{color:var(--accent)}
+.lyr-line.cur .tx{color:var(--grey-black);font-weight:var(--font-weight-medium)}
+/* 回到最新：滚离底部时出现（框层，不随内容滚动） */
+.lyr-back{
+  position:absolute;top:8px;right:40px;opacity:0;pointer-events:none;cursor:pointer;
+  transition:opacity .15s;border:none;height:22px;font-family:var(--font-family-cn);
+}
+.lyr-back.show{opacity:1;pointer-events:auto}
+/* 收起钮：框层常显，24px 命中区 */
+.lyr-coll{
+  position:absolute;top:8px;right:8px;opacity:.6;transition:opacity .15s,background-color .15s;
+  width:24px;height:24px;border-radius:50%;background:var(--wash);border:none;
+  display:inline-flex;align-items:center;justify-content:center;padding:0;
+}
+.lyr-coll:hover{opacity:1;background:var(--wash-strong)}
+.lyr-coll svg{width:12px;height:12px}
+/* 收起态：卡片原位缩回为一枚玻璃胶囊（点击从胶囊展开成卡片，同一锚点） */
+.lyr-pill{
+  position:absolute;right:0;bottom:0;height:34px;padding:0 16px;z-index:5;
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  background:var(--glass-grad);
+  -webkit-backdrop-filter:blur(16px) saturate(160%);
+  backdrop-filter:blur(16px) saturate(160%);
+  border:1px solid var(--glass-line);border-radius:999px;
+  box-shadow:var(--shadow-1),var(--inset-hi-soft);
+  font-size:12px;color:var(--grey-01);font-family:var(--font-family-cn);
+  opacity:0;transform:scale(.9);transform-origin:bottom right;pointer-events:none;
+  transition:opacity .16s ease .08s,transform .16s ease .08s,color .15s,border-color .15s;
+}
+.assist.lyr-off .lyr-pill{opacity:1;transform:none;pointer-events:auto}
+.lyr-pill:hover{color:var(--grey-black);border-color:var(--grey-03)}
+.lyr-pill svg{width:14px;height:14px;color:var(--grey-02)}
+
+/* ---------- 底部：受访者条（无容器） ---------- */
+.participants{grid-area:foot;display:flex;align-items:center;gap:16px;padding:0 4px;position:relative}
+.participants .spacer{flex:1}
+.p-stack{display:flex;align-items:center}
+.p-dot{
+  width:26px;height:26px;border-radius:50%;flex:none;cursor:pointer;position:relative;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--white);font-weight:var(--font-weight-medium);
+  border:2px solid var(--canvas);transition:transform .12s;
+}
+.p-dot+.p-dot{margin-left:-6px}
+.p-dot:hover{transform:translateY(-2px);z-index:2}
+.p-bubble{
+  position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);
+  width:180px;padding:12px 14px;z-index:20;
+  opacity:0;pointer-events:none;transition:opacity .15s;
+}
+.p-dot:hover .p-bubble{opacity:1}
+.p-bubble:after{
+  content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--card-2);
+}
+.p-bubble.edge-l{left:-6px;transform:none}
+.p-bubble.edge-l:after{left:20px}
+.p-bubble.edge-r{left:auto;right:-6px;transform:none}
+.p-bubble.edge-r:after{left:auto;right:20px}
+.p-bubble .b-name{font-size:13px;font-weight:var(--font-weight-medium);color:var(--grey-black)}
+.p-bubble .b-meta{font-size:11px;color:var(--grey-02);margin:3px 0 8px}
+.p-bubble .b-tags{display:flex;flex-wrap:wrap;gap:4px}
+
+/* ---------- 弹窗（Apple 美学 · spec v2.5 §1.8）：蒙层微模糊 + 毛玻璃面板 + 弹性入场 ---------- */
+.mask{
+  position:fixed;inset:0;background:var(--mask);z-index:100;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s ease;
+}
+.mask.show{opacity:1;pointer-events:auto}
+.rt-modal{
+  width:840px;border-radius:16px;
+  background:var(--modal-glass);
+  backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);
+  border:1px solid var(--glass-line);
+  box-shadow:var(--shadow-big),var(--inset-hi-soft);
+  display:flex;flex-direction:column;max-height:82vh;
+}
+.mask.show .rt-modal{animation:modalIn .26s cubic-bezier(.32,.72,0,1)}
+@keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mask.show .rt-modal{animation:none}}
+/* 弹窗头部：52px 标题区，17px/600，发丝线分隔 */
+.rt-hd{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;border-bottom:1px solid var(--line);flex:none}
+.rt-hd .t{font-size:17px;font-weight:var(--font-weight-semibold);color:var(--grey-black)}
+/* alert 类确认弹窗（Apple Alert）：标题/正文/按钮全部居中，等宽按钮并排 */
+.rt-modal.alert{padding:28px 28px 24px;display:block}
+.alert-title{margin:0;text-align:center;font-size:16px;font-weight:var(--font-weight-semibold);color:var(--grey-black)}
+.alert-text{text-align:center;font-size:13px;line-height:21px;color:var(--grey-01);margin:10px 0 0}
+.alert-actions{display:flex;justify-content:center;gap:12px;margin-top:24px}
+.alert-actions .gbtn{min-width:112px;margin-left:0;display:inline-flex;align-items:center;justify-content:center}
+.rt-body{display:flex;gap:32px;padding:28px;overflow-y:auto}
+.rt-table-wrap{flex:none;width:340px;height:340px;border-radius:50%;border:1px dashed var(--grey-03);position:relative;margin:auto}
+.rt-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.rt-center .no{font-family:var(--font-family-num);font-size:22px;font-weight:var(--font-weight-medium);color:var(--accent);letter-spacing:.06em}
+.rt-center .lb{font-size:10px;color:var(--grey-02);letter-spacing:.12em;margin-top:4px}
+.rt-seat{
+  position:absolute;width:80px;margin-left:-40px;margin-top:-40px;text-align:center;
+  cursor:grab;user-select:none;touch-action:none;
+}
+.rt-seat:active{cursor:grabbing}
+.rt-seat .av{
+  width:44px;height:44px;border-radius:50%;margin:0 auto;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:var(--white);font-weight:var(--font-weight-medium);
+  border:2px solid var(--card);box-shadow:0 0 0 1px var(--line);
+  transition:box-shadow .15s;
+}
+.rt-seat:hover .av,.rt-seat.sel .av{box-shadow:0 0 0 2px var(--accent)}
+.rt-seat .nm{font-size:12px;font-weight:var(--font-weight-medium);color:var(--grey-black);margin-top:6px}
+/* 声纹采集语样本行（spec v3.0 §4）：italic 灰字 + 截断，title 带全文 */
+.rt-seat .st{font-size:10px;color:var(--grey-02);font-style:italic;max-width:96px;margin:2px auto 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt-side{flex:1;min-width:0;display:flex;flex-direction:column}
+.side-tag{font-size:11px;color:var(--grey-02);letter-spacing:.12em;margin-bottom:6px}
+.rt-row{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:9px 8px;margin:0 -8px;font-size:12px;color:var(--grey-01);
+  border-bottom:1px solid var(--line);cursor:pointer;border-radius:2px;
+}
+.rt-row:hover{background:var(--wash)}
+.rt-row.sel{background:var(--wash)}
+.rt-row .r-name{font-weight:var(--font-weight-medium);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.rt-row .r-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.rt-row b{font-weight:400;color:var(--grey-02);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+#rtDetail{margin-top:14px}
+.empty-hint{font-size:12px;color:var(--grey-02);text-align:center;padding:26px 0;line-height:1.7}
+.rt-detail-box{background:var(--grey-05);border:1px solid var(--line);border-radius:10px;padding:16px}
+.rt-detail-box .pe-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.rt-detail-box .pe-head .avatar{width:40px;height:40px;font-size:15px}
+.rt-detail-box .pe-head .nm{font-size:15px;font-weight:var(--font-weight-medium);color:var(--grey-black)}
+.rt-detail-box .pe-head .meta{font-size:12px;color:var(--grey-02);margin-top:2px}
+.rt-detail-box .vp-sample{font-style:italic;color:var(--grey-02)}
+.rt-detail-box .pe-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.rt-detail-box .pe-tags .tag{background:var(--card);border:1px solid var(--line)}
+.rt-detail-box .pe-stats{
+  display:flex;gap:24px;margin-bottom:14px;padding:10px 14px;
+  background:var(--card);border-radius:6px;
+}
+.rt-detail-box .pe-stats .s .v{font-family:var(--font-family-num);font-size:18px;font-weight:var(--font-weight-medium);color:var(--grey-black)}
+.rt-detail-box .pe-stats .s .k{font-size:11px;color:var(--grey-02);margin-top:2px}
+.rt-detail-box .pe-actions{display:flex;gap:8px}
+.rt-tip{font-size:10px;color:var(--grey-02);margin-top:14px;letter-spacing:.04em}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(8px);
+  z-index:200;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+  background:var(--accent-fill) var(--metal);color:var(--white);font-size:12px;
+  padding:9px 18px;border-radius:999px;box-shadow:var(--shadow-2);
+}
+.toast.show{opacity:1;transform:translateX(-50%)}
+/* ============================================================
+ * 浅色主题组件覆写（浅色主题 spec v1.0 §4/§5）：辉光 → 深藏青实底，无彩色发光
+ * ============================================================ */
+html.light .gbtn:hover{
+  color:#fff;background:var(--accent-fill);border-color:var(--accent-fill);
+  text-shadow:none;box-shadow:none;transition:.25s ease;
+}
+html.light .gbtn.danger:hover{box-shadow:var(--metal-hi)}
+html.light .ol-resizer:hover,html.light .ol-resizer.active{
+  background:linear-gradient(to right,transparent,rgba(29,29,29,.08),transparent)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 顶栏：三段式对称（身份 / 计时 / 控制） ============ -->
+  <header class="topbar">
+    <div class="grp">
+      <span class="session-name">ANR Serum Mindset Study · Beijing</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/></svg>Room <b>4821</b></span>
+    </div>
+    <div class="grp mid">
+      <span class="spill live" id="recPill"><span class="live-dot"></span>Recording</span>
+      <span class="timer num" id="timer">00:47:12</span>
+    </div>
+    <div class="grp acts">
+      <button class="theme-btn" id="themeBtn" title="Switch to light theme" aria-label="Switch theme">
+        <svg id="icoSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5 5l1.6 1.6M17.4 17.4L19 19M19 5l-1.6 1.6M6.6 17.4L5 19"/></svg>
+        <svg id="icoMoon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M20.6 14.8A8.8 8.8 0 0 1 9.2 3.4 8.8 8.8 0 1 0 20.6 14.8Z"/></svg>
+      </button>
+      <button class="gbtn icon" id="pauseBtn" title="Pause recording and AI processing">
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      </button>
+      <button class="gbtn danger" id="endBtn">End</button>
+    </div>
+  </header>
+
+  <!-- ============ 左栏：访谈大纲（展开态） ============ -->
+  <aside class="outline">
+    <div class="ol-hd">
+      <svg class="hd-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h12M9 12h12M9 18h12"/><circle cx="4.5" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1" fill="currentColor" stroke="none"/></svg>
+      <span class="t">Discussion Guide</span>
+      <span class="spacer"></span>
+      <span class="chip"><b id="olDone">0</b>&nbsp;/&nbsp;<span id="olTotal">0</span></span>
+      <button class="icon-btn" id="olCollapse" title="Collapse guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
+    <div class="ol-bar"><i id="olBar" style="width:0%"></i></div>
+    <div class="ol-list" id="olList"></div>
+    <div class="ol-resizer" id="olResizer" title="Drag to resize guide panel"></div>
+  </aside>
+
+  <!-- ============ 左栏：收起态窄轨 ============ -->
+  <div class="rail">
+    <button class="icon-btn" id="olExpand" title="Expand guide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <div class="rail-count" id="railCount"></div>
+    <div class="rail-list" id="railList"></div>
+  </div>
+
+  <!-- ============ 中央舞台：题卡（唯一主容器）+ 本题 AI 提示 + 翻页（中央内容区 spec 2/8/9） ============ -->
+  <!-- content-wrap：grid 槽位持有者 + relative 定位基准——Start 毛玻璃幕作为滚动容器的兄弟层钉在可视区 -->
+  <div class="content-wrap" id="contentWrap">
+    <main class="content">
+      <div class="stage">
+        <div class="qcard" id="qcard"></div>
+      </div>
+    </main>
+    <!-- Start 幕（spec v3.0 §6.2 → v3.1 §11）：idle 题整幅覆盖中央舞台可视区；内容居中呈现 -->
+    <div class="start-card" id="startVeil" hidden>
+      <span class="sc-cap">NOT STARTED</span>
+      <span class="sc-sub">The question will be cast to the room display and respondent devices when started.</span>
+      <button class="gbtn primary" id="startQBtn">Start Question</button>
+    </div>
+  </div>
+
+  <!-- ============ 右栏：状态层（发言占比环，坐画布）+ 字幕层（逐字稿，底部） ============ -->
+  <aside class="assist" id="assist">
+    <div class="donut-wrap">
+      <div class="donut-row">
+        <div class="donut-box">
+          <svg id="donut" width="140" height="140" viewBox="0 0 120 120"></svg>
+          <div class="donut-c"><span class="nm" id="dnNm">—</span><span class="tag" id="dnTag"></span><span class="pc" id="dnPc"></span></div>
+        </div>
+        <div class="dm-legend" id="dmLegend"></div>
+      </div>
+      <div class="donut-cap">Share of Words</div>
+    </div>
+    <!-- AI 提示事件流（spec v2.0）：锚定占比环下方，从上往下长；无卡片，点击行=已读 -->
+    <div class="tipstream" id="tipStream">
+      <div class="ts-idle" id="tsIdle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+        AI Live Assist
+      </div>
+      <div class="ts-list" id="tsList"></div>
+      <button class="ts-arch" id="tsArch" hidden><b>0</b> read</button>
+      <div class="ts-arch-list" id="tsArchList" hidden></div>
+    </div>
+    <div class="lyr" id="lyr">
+      <div class="lyr-scroll" id="lyrScroll">
+        <div class="lyr-inner" id="lyrInner"></div>
+      </div>
+      <button class="chip lyr-back" id="lyrBack" title="Back to latest and keep following">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>Back to latest
+      </button>
+      <button class="icon-btn lyr-coll" id="lyrColl" title="Collapse transcript">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+      </button>
+    </div>
+    <button class="lyr-pill" id="lyrPill" title="Expand transcript">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg>Transcript
+    </button>
+  </aside>
+
+  <!-- ============ 底部：受访者条（无容器） ============ -->
+  <footer class="participants">
+    <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>In room <b id="pHere">0</b></span>
+    <div class="p-stack" id="pStack"></div>
+    <span class="spacer"></span>
+    <div class="q-nav" id="qNav"></div>
+  </footer>
+</div>
+
+<!-- ============ 浮层：题目指引 popover / 窄轨 tooltip ============ -->
+<div class="guide-pop card-pop" id="guidePop"></div>
+<div class="rail-tip card-pop" id="railTip"></div>
+<div class="dm-tip card-pop" id="dmTip"></div>
+
+<!-- ============ 结束确认弹窗（KF-07 · Apple Alert 形态）：不可逆动作，红色实心确认 ============ -->
+<div class="mask" id="cfMask">
+  <div class="rt-modal alert" style="max-width:400px">
+    <h3 class="alert-title">End this session?</h3>
+    <p class="alert-text">Recording will stop and the room closes for everyone.<br>This session cannot be reopened.</p>
+    <div class="alert-actions">
+      <button class="gbtn" id="cfCancel">Keep Going</button>
+      <button class="gbtn danger" id="cfOk" style="background:var(--error-100) var(--metal);box-shadow:var(--metal-hi);color:var(--white)">End Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 圆桌弹窗（受访者管理） ============ -->
+<div class="mask" id="rtMask">
+  <div class="rt-modal">
+    <div class="rt-hd">
+      <span class="t">Roundtable · Respondent Management</span>
+      <button class="icon-btn" id="rtClose" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="rt-body">
+      <div class="rt-table-wrap" id="rtTable">
+        <div class="rt-center">
+          <div class="no">4821</div>
+          <div class="lb">Roundtable</div>
+        </div>
+        <div id="rtSeats"></div>
+      </div>
+      <div class="rt-side">
+        <div class="side-tag">Attendees</div>
+        <div id="rtRows"></div>
+        <div id="rtDetail"></div>
+        <div class="rt-tip">Drag seats to rearrange · click a seat or name for details</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 数据 ============ */
+/* 题目数据（spec v3.0 §7）：discussion 题带 guide（无结构 Markdown 纯文本一段），choice 题不带指引 */
+const OUTLINE = [
+  { no: "S1", name: "Screener", guide: "Apply the screening criteria strictly: confirm each participant has bought an anti-aging serum in the past three months and shares in the purchase decision. Never reveal qualifying answers; clarify vague responses before judging.", questions: [
+    { no: 1, type: "screen", title: "Have you personally purchased an anti-aging skincare serum in the past three months?",
+      probes: ["Only participants who have bought an anti-aging serum proceed to the main session", "Never reveal qualifying answers; clarify vague responses before judging"] },
+    { no: 2, type: "screen", title: "Who is responsible for skincare purchases at home, especially serums?",
+      probes: ["Participant must have a say in skincare purchase decisions to qualify"] },
+  ]},
+  { no: "S2", name: "Background & Habits", guide: "Quickly map each participant's skincare routine and anti-aging product background to build context for the pain-point discussion. Keep the pace brisk; don't over-probe.", questions: [
+    { no: 3, type: "discussion", title: "Please briefly introduce yourselves — what matters most to you in everyday skincare?",
+      guide: "This opener is for warming up and mapping each person's everyday skincare priorities. Cover who they are, their routine, and what good skincare means to them personally. Keep it light — do not probe into products or brands yet. Note each person's speaking style and confidence level for later rounds, and quietly invite anyone who seems hesitant." },
+    { no: 4, type: "discussion", title: "When you hear \"early anti-aging\", what comes to mind first?",
+      guide: "A projective question to surface unfiltered associations with early anti-aging. Capture each person's first word or image before any discussion builds, and do not let early answers anchor later ones. Note whether associations skew toward lines, dullness, ingredients, or anxiety — that split shapes how you read the rest of the session." },
+  ]},
+  { no: "S3", name: "Pain Points & Purchase Decisions", guide: "Core section. Focus on purchase pain points and decision logic for anti-aging serums; probe for concrete examples and influences, and separate product-level from perception-level issues. Go deep without repeating yourself question by question.", questions: [
+    { no: 5, type: "discussion", depth: "deep", title: "How did you end up choosing the serum you use now?",
+      guide: "Core question on the purchase path. Trace one complete story per person: where they first heard about the product, what convinced them, and who else influenced the decision. Probe info sources (creators, reviews, friends, counters), key decision factors and concerns, and who has the final say. Separate what people say they value from what they actually did." },
+    { no: 6, type: "choice", title: "Which of these ingredients do you trust most for anti-aging results?" },
+    { no: 7, type: "discussion", depth: "deep", title: "Recall an anti-aging product purchase that disappointed you — what happened?",
+      guide: "Ask for one concrete disappointing purchase and slow down on the detail. Cover how the disappointment showed up (no results, irritation, texture), what expectations were built before purchase and by whom, and whether they told others or changed behavior afterwards. Push past polite answers — a fine experience is not a story. Use the story to anchor later questions on trust and evidence." },
+    { no: 8, type: "discussion", title: "At what price would you rebuy a serum without hesitation?",
+      guide: "Pin down the price anchor without leading it. Separate the trial price from the repurchase price — many will quote one number for both. Probe where the anchor comes from (first purchase, promotions, counter price) and what would make them pay more. Do not average the room; keep each person's number attached to their reasoning." },
+    { no: 9, type: "choice", title: "When shopping for an anti-aging serum, which matters more to you?" },
+  ]},
+  { no: "S4", name: "Efficacy Judgment & Brand Philosophy", guide: "Explore how participants judge whether a product works and which brand philosophies they favor, laying ground for the concept test. Watch for quiet participants and give them room to speak.", questions: [
+    { no: 10, type: "discussion", depth: "deep", title: "How do you judge whether a serum actually works?",
+      guide: "The pivotal question for the concept test. Establish each person's judgment window (days, weeks, months) and the signals they read: texture, makeup wear, others' comments, before-after testing, tools like skin-analysis apps. Probe what evidence would actually change their mind, and watch for the gap between how they judge products and what claims they say they trust." },
+    { no: 11, type: "discussion", title: "If you were recommending an anti-aging serum to a close friend, what would you say?",
+      guide: "A framing question that reveals what each person actually sells when they advocate. Cover the core selling points in their pitch, whether they would buy the product themselves as a gift, and what they would warn the friend about. Compare the pitch with their earlier pain points — contradictions are worth one gentle probe." },
+    { no: 12, type: "choice", title: "Which of these product claims appeals to you most?" },
+  ]},
+  { no: "S5", name: "Wrap-up & Ideal Projection", guide: "Closing section. Capture the core expectations through the upload and open questions, then bring the room together in one line. Remind participants to finish the upload before moving to the closing message.", questions: [
+    { no: 13, type: "upload", title: "Take a photo of the serum you're currently using and briefly explain why you bought it",
+      probes: ["Remind respondents to complete the upload and notes on their device", "Watch for non-submitters and prompt each one before closing"] },
+    { no: 14, type: "discussion", title: "When you see a \"Clean Formula\" label, how do you read it?",
+      guide: "Test how the Clean Formula label lands. Capture positive and negative associations in the first pass, then probe whether they would pay a premium for the label and what proof they would need behind it. Do not define the term for the room — if understanding diverges, that divergence is the finding." },
+    { no: 15, type: "discussion", title: "What would your ideal early anti-aging serum look like?",
+      guide: "Closing projection. Let each person describe their ideal early anti-aging serum in their own words, then bring the room's views together in one line on the board. Cover the trade-offs they accept or refuse (price, texture, speed of results). Close by thanking participants and previewing next steps." },
+  ]},
+];
+
+/* ratio = Share of Words（spec v3.0 §8.2）：逐字稿字数占比，非发言时长；vp = 声纹采集语（§4） */
+const PARTICIPANTS = [
+  { name: "Wei Li",    age: 29, tags: ["Ingredient-led", "Value-conscious"], ratio: 12,
+    vp: "I always check the ingredient list before putting anything on my skin" },
+  { name: "Jia Wang",  age: 34, tags: ["ANR user (3 yrs)", "Follows review creators"], ratio: 28,
+    vp: "My skin is combination — the T-zone gets oily by the afternoon" },
+  { name: "Han Zhang", age: 31, tags: ["Mature skin", "Mom of two"], ratio: 21,
+    vp: "After my second kid my skin turned drier and duller than before" },
+  { name: "Mo Chen",   age: 27, tags: ["Night owl", "Skincare novice"], ratio: 15,
+    vp: "I stay up late, so my skin looks tired when I wake up" },
+  { name: "Yinuo Zhao", age: 35, tags: ["Re-Nutriv user", "Has had procedures"], ratio: 14,
+    vp: "I had one aesthetic procedure, so repair matters most to me" },
+  { name: "Yue Sun",   age: 26, tags: ["Sensitive skin", "Minimalist routine"], ratio: 10,
+    vp: "My skin reacts to new products, so I patch-test everything first" },
+];
+
+const TYPE_LABEL = { screen: "Screener", choice: "Choice", upload: "Upload", discussion: "Open" };
+/* 双主题调色板（浅色主题 spec v1.0 §3.4）：html.light 决定取值，切换后重渲染 */
+const PALETTES={
+  dark:{shade:["#3F4669","#565C7E","#767C9E"],rank:["#C9CCE0","#A6ABC8","#8389AC","#61678E","#454B72","#2E3450"]},
+  light:{shade:["#4A6BB5","#6E8CC9","#9AA9CF"],rank:["#2E4A8F","#4A6BB5","#6E8CC9","#8FA9D6","#B3C4E3","#33739E"]}
+};
+const PAL=()=>document.documentElement.classList.contains("light")?PALETTES.light:PALETTES.dark;
+const SHADE = () => PAL().shade;   /* 头像同轴 3 档：随主题取值 */
+const shade = i => SHADE()[i % 3];
+
+/* 仅保留讨论题与选择题（本期不呈现甄别 / 上传题），物理移除空环节，环节与题号顺序重排 */
+const QUESTIONS = [];
+{
+  for (let i = OUTLINE.length - 1; i >= 0; i--) {
+    OUTLINE[i].questions = OUTLINE[i].questions.filter(q => q.type === "discussion" || q.type === "choice");
+    if (!OUTLINE[i].questions.length) OUTLINE.splice(i, 1);
+  }
+  let sNo = 1, qNo = 1;
+  OUTLINE.forEach(sec => {
+    sec.no = "S" + sNo++;
+    sec.questions.forEach(q => {
+      q.no = qNo++;
+      q.sec = `${sec.no} · ${sec.name}`; q.secName = sec.name; q.secGuide = sec.guide;
+      QUESTIONS.push(q);
+    });
+  });
+}
+
+/* 中央区演示数据（key = 题号）：p = 过往提炼（斜体置灰） / v = 实时归纳（正文深色），6 人全覆盖 / choice = 选择题 */
+const STAGE = {
+  1:  { p: { "Jia Wang": "Moisturize as a base; anti-aging two or three times a week.", "Wei Li": "I check the ingredient list and reviews before buying.", "Han Zhang": "After kids, I care more about firmness and dullness.", "Mo Chen": "Ingredients first, brand second.", "Yinuo Zhao": "I trust the big brands — less to worry about.", "Yue Sun": "Gentleness first." },
+        v: { "Jia Wang": "Day to day I moisturize as a base; an anti-aging serum is a step-up I add two or three times a week.", "Wei Li": "I always check the ingredient list and reviews before buying a serum — afraid of a bad purchase.", "Han Zhang": "After having my kids I care much more about firmness and dullness.", "Mo Chen": "I read the ingredient list top to bottom before I buy.", "Yinuo Zhao": "I trust the R&D track record behind the big brands.", "Yue Sun": "My skin is sensitive, so I check how gentle it is first." } },
+  2:  { p: { "Jia Wang": "Fine lines around the eyes come first.", "Wei Li": "Dullness and pores come to mind.", "Han Zhang": "Nasolabial lines stand out most.", "Mo Chen": "I think of ingredient concentrations.", "Yinuo Zhao": "The ritual of a high-end serum.", "Yue Sun": "Worrying about irritation." },
+        v: { "Jia Wang": "My first thought is the fine lines around my eyes — they show most when I smile.", "Wei Li": "For me it's dullness and enlarged pores.", "Han Zhang": "I care most about my nasolabial lines — the first thing I see in the mirror.", "Mo Chen": "My first thought is ingredients and concentrations.", "Yinuo Zhao": "I think of the texture and ritual of a high-end serum.", "Yue Sun": "My first thought is whether it will irritate my skin." } },
+  3:  { p: { "Jia Wang": "Friend recommendations cross-checked with reviews.", "Wei Li": "I search for bad-purchase posts to steer clear.", "Han Zhang": "I let people around me vet it.", "Mo Chen": "Check ingredients, then buy a sample.", "Yinuo Zhao": "The counter experience sways me.", "Yue Sun": "I search whether it's OK for sensitive skin." },
+        v: { "Jia Wang": "Mainly friend recommendations cross-checked with reviews on RED (Xiaohongshu).", "Wei Li": "Before deciding I search whether anyone has posted about a bad purchase.", "Han Zhang": "I have people around me vet it first, then do my own round of checking.", "Mo Chen": "I check the ingredients first, then decide whether to buy a sample.", "Yinuo Zhao": "The Estée Lauder counter experience directly influences me.", "Yue Sun": "I specifically search whether it works for sensitive skin." } },
+  4:  { choice: ["Pro-Xylane", "Retinol", "Peptides", "Niacinamide"], picks: [[2, 5], [0, 4], [1, 3], []],
+        reasons: ["Yinuo Zhao values brand endorsement and trust in premium lines; retinol extends her aesthetic-procedure experience. Han Zhang says she only dares use mild concentrations.",
+                  "Choosers see Pro-Xylane as gentler and better suited to daily long-term use.",
+                  "Jia Wang and Mo Chen lean ingredient-led; peptides feel like a safer entry point."] },
+  5:  { p: { "Jia Wang": "Discovered via creators; following the crowd once backfired.", "Wei Li": "Try a sample first, then the full size.", "Han Zhang": "My best friend vets it to avoid bad buys.", "Mo Chen": "I've had an anti-aging serum sit unused.", "Yinuo Zhao": "Expensive doesn't mean right for me.", "Yue Sun": "Gentle but ineffective is also a letdown." },
+        v: { "Jia Wang": "This Advanced Night Repair bottle came from a review creator; I've rebought it twice, and the time I got burned was from following the crowd.", "Wei Li": "I usually buy a sample first and trial it for two weeks before committing to the full size.", "Han Zhang": "My best friend vets things for me — anything she got burned on, I don't buy.", "Mo Chen": "I had a serum I gave up on after two weeks.", "Yinuo Zhao": "I've bought expensive ones, and it's disappointing when they don't suit me." } },
+  6:  { p: { "Jia Wang": "250 to rebuy, 500 to try something new.", "Wei Li": "I think in cost-per-use.", "Han Zhang": "Stocking up during promos is better value.", "Mo Chen": "My anchor is still stuck in my student days.", "Yinuo Zhao": "Above 300 I'd hesitate.", "Yue Sun": "I'd pay a bit more for a small bottle." },
+        v: { "Jia Wang": "For a repurchase, around 250 works; to try something new I'd go up to 500.", "Wei Li": "I work on cost-per-use — if it averages out, paying more is worth it.", "Han Zhang": "I stock up during promotions; I rarely pay full price.", "Mo Chen": "My price anchor is still stuck in my student days.", "Yinuo Zhao": "Over 300 and I'll hesitate for a long while.", "Yue Sun": "I'd rather buy a small bottle — a bit pricier is still acceptable." } },
+  7:  { choice: ["Backed by efficacy data", "Texture and absorption", "Brand philosophy and story"], picks: [[0, 2, 5], [1, 4, 3], []],
+        reasons: ["The efficacy-first group prefers products backed by comparative data; Wei Li counts review creators among her evidence sources.",
+                  "The texture-first group stresses how fast it absorbs; Han Zhang gave up on a whole bottle after one greasy experience."] },
+  8:  { p: { "Jia Wang": "It takes a month to tell.", "Wei Li": "Two weeks is my cutoff.", "Han Zhang": "I judge by how makeup sits.", "Mo Chen": "I follow how it feels.", "Yinuo Zhao": "A month tells the story.", "Yue Sun": "Slow results, I can wait." },
+        v: { "Jia Wang": "For anti-aging I'll give it a month — two weeks shows nothing.", "Wei Li": "Two weeks is my cutoff; no change and I call it ineffective.", "Han Zhang": "I look at how smoothly makeup goes on and whether dullness improves.", "Mo Chen": "I follow the feel — if it's comfortable, I keep going.", "Yinuo Zhao": "I'm willing to give it a month to show results.", "Yue Sun": "If it's gentle, I can wait for slow results." } },
+  9:  { p: { "Jia Wang": "Fine lines fading means it works.", "Wei Li": "No results in two weeks, I drop it.", "Han Zhang": "Makeup wear and dullness.", "Mo Chen": "I follow the feel.", "Yinuo Zhao": "Changes in firmness.", "Yue Sun": "First, any discomfort." },
+        v: { "Jia Wang": "The most direct test is whether the fine lines around my eyes have faded.", "Wei Li": "If I see no change in two weeks, I call it ineffective.", "Han Zhang": "Smoother makeup application and improved dullness count as working.", "Mo Chen": "If it feels comfortable and doesn't suffocate my skin, I'll keep using it.", "Yinuo Zhao": "Mainly I watch for changes in firmness.", "Yue Sun": "First I check for any adverse reaction." } },
+  10: { choice: ["Anti-aging efficacy first", "Safe, gentle formula", "Professional brand image"], picks: [[1, 3, 4], [0, 5], [2]],
+        reasons: ["Most treat formula safety as the baseline; Yue Sun, with sensitive skin, insists on it.",
+                  "The efficacy camp stresses their willingness to pay for verifiable results."] },
+  11: { p: { "Jia Wang": "A small premium, yes.", "Wei Li": "Ingredients have to be clearly explained.", "Han Zhang": "Certifications and endorsements matter.", "Mo Chen": "Clean formula = simple ingredients.", "Yinuo Zhao": "All the big brands do it; I follow.", "Yue Sun": "Gentle and non-irritating is key." },
+        v: { "Jia Wang": "I'd pay a small premium for a clean formula.", "Wei Li": "As long as the ingredients are clearly explained — no vague concepts.", "Han Zhang": "I'd trust certified products more.", "Mo Chen": "Clean formula, to me, just means simple ingredients.", "Yinuo Zhao": "All the big brands are doing it, so naturally I pay attention.", "Yue Sun": "Gentle and non-irritating is what matters." } },
+  12: { p: { "Jia Wang": "Visible results, honest pricing.", "Wei Li": "Ingredients clearly explained.", "Han Zhang": "Texture and bottle both matter.", "Mo Chen": "Skip the concepts, show me proof.", "Yinuo Zhao": "Efficacy and gentleness together.", "Yue Sun": "Gentleness and results both." },
+        v: { "Jia Wang": "The ideal product shows visible results, has a sensible texture, and its packaging matches its price.", "Wei Li": "Ingredients explained clearly, no gimmicky concepts.", "Han Zhang": "Texture and the feel of the bottle both factor into my judgment.", "Mo Chen": "Don't sell me concepts — show me the evidence.", "Yinuo Zhao": "I hope efficacy and gentleness can come in one.", "Yue Sun": "Getting gentleness and results together is what I'd want most." } },
+};
+
+/* 题目状态模型（spec v3.0 §6.1）：state ∈ { idle, active, done }；demo 初始全部 idle */
+const state = {
+  cur: 0,            /* 浏览位置：自由翻页，不改变题目状态 */
+  active: -1,        /* 进行中的题（Start 后唯一）；Start 新题时旧 active 隐式转 done */
+  done: new Set(),
+  castAnswers: new Set(), /* 已投大屏票型的选择题（q.no）——Cast Answers 终态 */
+  paused: false,
+  seconds: 47 * 60 + 12,
+  guideIdx: -1,
+};
+const qState = i => state.active === i ? "active" : state.done.has(i) ? "done" : "idle";
+
+/* ============ 工具 ============ */
+const $ = id => document.getElementById(id);
+const esc = s => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200);
+}
+function fmt(sec) {
+  const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+  const m = String(Math.floor(sec % 3600 / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+/* 浮层视口钳制：任何位置弹出都完整可见 */
+function clampPop(pop, x, y) {
+  const m = 8;
+  x = Math.min(Math.max(m, x), window.innerWidth - pop.offsetWidth - m);
+  y = Math.min(Math.max(m, y), window.innerHeight - pop.offsetHeight - m);
+  pop.style.left = x + "px";
+  pop.style.top = y + "px";
+}
+
+/* ============ 大纲（展开态） ============ */
+function renderOutline() {
+  const pct = Math.round(state.done.size / QUESTIONS.length * 100);
+  $("olBar").style.width = pct + "%";
+  $("olDone").textContent = state.done.size;
+  $("olTotal").textContent = QUESTIONS.length;
+  $("railCount").textContent = `${state.done.size}/${QUESTIONS.length}`;
+
+  const box = $("olList");
+  box.innerHTML = "";
+  let idx = 0;
+  OUTLINE.forEach(sec => {
+    const start = idx;
+    const doneN = sec.questions.filter((_, k) => state.done.has(start + k)).length;
+    const curInSection = state.cur >= start && state.cur < start + sec.questions.length;
+
+    const secEl = document.createElement("div");
+    secEl.className = "sec-row" + (curInSection ? " current" : "");
+    secEl.innerHTML = `<span class="s-name">${sec.no} · ${esc(sec.name)}</span><span class="s-count">${doneN}/${sec.questions.length}</span>`;
+    box.appendChild(secEl);
+
+    sec.questions.forEach((q, k) => {
+      const i = start + k;
+      const row = document.createElement("div");
+      row.className = "q-row" + (i === state.cur ? " current" : "") + (state.done.has(i) ? " done" : "") + (state.active === i ? " active" : "");
+      row.dataset.idx = i;
+      row.innerHTML = `
+        <span class="q-no"><span class="qn">Q${String(q.no).padStart(2, "0")}${q.depth === "deep" ? '<i class="q-deep" title="Deep dive"></i>' : ""}</span><span class="q-type ${q.type === "choice" ? "choice" : ""}">${TYPE_LABEL[q.type] || ""}</span></span>
+        <span class="q-text">${esc(q.title)}</span>
+        <span class="q-acts">
+          ${q.guide ? `<button class="q-guide ${state.guideIdx === i ? "on" : ""}" title="View interview guide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h9"/></svg>
+          </button>` : ""}
+        </span>`;
+      row.addEventListener("click", () => setCurrent(i));
+      const gbtn = row.querySelector(".q-guide");
+      if (gbtn) {
+        gbtn.addEventListener("mouseenter", () => showGuide(i, gbtn));
+        gbtn.addEventListener("mouseleave", () => closeGuide());
+        gbtn.addEventListener("click", e => {
+          e.stopPropagation();
+          state.guideIdx === i ? closeGuide() : showGuide(i, gbtn);
+        });
+      }
+      box.appendChild(row);
+    });
+    idx += sec.questions.length;
+  });
+  renderRail();
+}
+
+function setCurrent(i, anim) {
+  if (i < 0 || i >= QUESTIONS.length) return;
+  const changed = i !== state.cur;
+  state.cur = i;
+  closeGuide();
+  renderOutline();
+  renderStage(anim && changed);
+  renderTips();
+  const row = document.querySelector(`.q-row[data-idx="${i}"]`);
+  if (row) row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  const rq = document.querySelectorAll(".rail-q")[i];
+  if (rq && $("app").classList.contains("ol-collapsed")) rq.scrollIntoView({ block: "nearest" });
+}
+
+/* ============ 中央舞台（中央内容区 spec）：题卡 / Start 卡 / 本题提示 / 翻页 ============ */
+/* 底部统一结构（spec v3.0 §7）：discussion = Interview Guide 纯文本块 + AI 提炼；choice = 选项（票型常驻）+ Cast Answers */
+function discView(q, d) {
+  const p = d.p || {}, v = d.v || {};
+  /* 每人一行：过往提炼（斜体置灰，印在底上）→ 当前归纳（正文深色）自然续接 */
+  const rows = PARTICIPANTS.map(pa => {
+    const pre = p[pa.name], live = v[pa.name];
+    const empty = !pre && !live ? " empty" : "";
+    return `<div class="qv-row${empty}"><span class="qv-name">${esc(pa.name)}</span><span class="qv-colon">:</span><span class="qv-text">${pre ? `<i class="pre">${esc(pre)}</i>` : ""}${live ? `<span class="live">${esc(live)}</span>` : ""}</span></div>`;
+  }).join("");
+  /* Interview Guide：无结构纯文本一整块，位于 AI 提炼之上（spec v3.0 §7.2） */
+  const guideSec = q.guide ? `
+    <div class="ig-block">
+      <div class="col-cap">Interview Guide</div>
+      <p class="ig-text">${esc(q.guide)}</p>
+    </div>` : "";
+  return `${guideSec}<div class="qv-list"><div class="col-cap">AI Digest<span class="ai-load" title="AI is summarizing live"><i></i><i></i><i></i><i></i></span></div>${rows}</div>`;
+}
+function choiceView(q, d) {
+  /* 票型常驻（spec v3.1 §12）：谁选了什么（头像 + AI inference）直接呈现于选项下方，
+     与 discussion 题 AI Digest 同等常驻地位——主持人现场随时直读，无需任何交互；
+     按钮语义对齐 §6 Start 机制：discussion 投题目，选择题投结果 → Cast Answers 投大屏 */
+  const L = "ABCDE";
+  const answered = new Set((d.picks || []).flat());
+  const cast = state.castAnswers.has(q.no);
+  const rows = (d.choice || []).map((opt, k) => {
+    const picks = d.picks && d.picks[k] || [];
+    const avs = picks.map(pi => {
+      const p = PARTICIPANTS[pi];
+      return `<span class="p-dot" style="background:${shade(pi)}" title="${esc(p.name)}">${esc(p.name[0])}</span>`;
+    }).join("");
+    const reason = picks.length && d.reasons && d.reasons[k]
+      ? `<div class="reason">AI inference: ${esc(d.reasons[k])}</div>` : "";
+    return `<div class="opt-row"><span class="opt-letter">${L[k]}</span><span class="opt-text">${esc(opt)}</span><span class="opt-picks">${avs}</span></div>${reason}`;
+  }).join("");
+  const btn = `<div class="show-ans"><button class="gbtn ${cast ? "cast-done" : "primary"}" id="castAnsBtn" title="${cast ? "Answers are on the room display" : "Cast current answers to the room display"}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/><circle cx="12" cy="12" r="1"/></svg>
+    ${cast ? "On Screen" : "Cast Answers"}</button></div>`;
+  const un = PARTICIPANTS.filter((_, i) => !answered.has(i)).map(p => p.name);
+  const unLine = un.length ? `<div class="unanswered">${esc(un.join(", "))} haven't answered</div>` : "";
+  return rows + btn + unLine;
+}
+function renderStage(anim) {
+  const q = QUESTIONS[state.cur];
+  const d = STAGE[q.no] || {};
+  const card = $("qcard");
+  const build = () => {
+    const st = qState(state.cur);
+    const body = q.type === "choice" ? `<div class="q-opts">${choiceView(q, d)}</div>` : discView(q, d);
+    card.innerHTML = `
+      <div class="q-head">
+        <span class="q-qn">Q${String(q.no).padStart(2, "0")}${q.depth === "deep" ? '<i class="q-deep" title="Deep dive"></i>' : ""}</span>
+        ${st === "done" ? '<span class="q-done">DONE</span>' : ""}
+        <span class="q-title">${esc(q.title)}</span>
+      </div>
+      <div class="q-body">${body}</div>`;
+    /* Start 幕（spec v3.1 §11）：独立覆盖层钉在可视区；几何由 JS 实测题卡内容区——
+       left/width 与文字区左右贴合、top 在题干底部，保证全部盖住且保留圆角浮层造型 */
+    const veil = $("startVeil");
+    const idle = st === "idle";
+    if (idle) {
+      const wrap = $("contentWrap"), wrect = wrap.getBoundingClientRect();
+      const qr = card.getBoundingClientRect();
+      const qbr = card.querySelector(".q-body").getBoundingClientRect();
+      veil.style.left = Math.round(qr.left - wrect.left) + "px";
+      veil.style.width = Math.round(qr.width) + "px";
+      veil.style.top = Math.max(0, Math.round(qbr.top - wrect.top)) + "px";
+      $("startQBtn").onclick = () => startQuestion(state.cur);
+    }
+    veil.hidden = !idle;
+    const ca = $("castAnsBtn");
+    if (ca) ca.addEventListener("click", () => {
+      if (state.castAnswers.has(q.no)) return;   /* 单向语义：已投屏不再重复入账 */
+      state.castAnswers.add(q.no);
+      renderStage(false);
+      pushCastTip(`Answers for Q${String(q.no).padStart(2, "0")} cast to room display`);
+    });
+  };
+  if (anim) {
+    card.classList.add("out");
+    setTimeout(() => { build(); card.classList.remove("out"); }, 150);
+  } else build();
+  renderNav();
+}
+/* Start 机制（spec v3.0 §6.3）：该题 → active；原 active → done；同步左栏与事件流 */
+function startQuestion(i) {
+  if (i < 0 || i >= QUESTIONS.length || state.active === i) return;
+  if (state.active >= 0) state.done.add(state.active);
+  state.active = i;
+  renderOutline();
+  renderStage(false);
+  pushCastTip(`Question Q${String(QUESTIONS[i].no).padStart(2, "0")} cast to room display & respondent devices`);
+}
+/* E 翻页：仅左右箭头；键盘 ←→↑↓；不绑定完成状态 */
+function renderNav() {
+  const i = state.cur, n = QUESTIONS.length;
+  $("qNav").innerHTML = `
+    <button class="nav-arrow" id="navPrev" ${i === 0 ? "disabled" : ""} title="Previous">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button class="nav-arrow" id="navNext" ${i === n - 1 ? "disabled" : ""} title="Next">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </button>`;
+  $("navPrev").addEventListener("click", () => setCurrent(i - 1, true));
+  $("navNext").addEventListener("click", () => setCurrent(i + 1, true));
+  layoutNav();
+}
+/* 翻页箭头与中央栏轴线几何对齐：随左栏拖拽/收起/窗口变化实时重算 */
+function layoutNav() {
+  const c = document.querySelector(".content").getBoundingClientRect();
+  const f = document.querySelector(".participants").getBoundingClientRect();
+  $("qNav").style.left = (c.left + c.width / 2 - f.left) + "px";
+}
+window.addEventListener("resize", layoutNav);
+document.addEventListener("keydown", e => {
+  if ($("rtMask").classList.contains("show") || $("cfMask").classList.contains("show") || $("app").classList.contains("ol-collapsed")) return;
+  if (["ArrowRight", "ArrowDown"].includes(e.key)) { e.preventDefault(); setCurrent(state.cur + 1, true); }
+  if (["ArrowLeft", "ArrowUp"].includes(e.key)) { e.preventDefault(); setCurrent(state.cur - 1, true); }
+});
+
+/* ============ 初始化 ============ */
+renderOutline();
+renderStage(false);
+
+/* ============ 题目指引 Popover（v2.25：hover 立即出现 / 移走立即消失，零延时） ============ */
+function showGuide(i, anchor) {
+  state.guideIdx = i;
+  const q = QUESTIONS[i];
+  const pop = $("guidePop");
+  /* 数据源 = 题目级 guide（spec v3.0 §7.2），与题卡 Interview Guide 内容一致 */
+  pop.innerHTML = `
+    <div class="gp-hd">
+      <span class="t">Interview Guide · <b>Q${String(q.no).padStart(2, "0")}</b></span>
+      <span class="sec">${esc(q.secName)}</span>
+    </div>
+    <div class="gp-guide">${esc(q.guide || q.secGuide)}</div>`;
+  pop.classList.add("show");
+  const r = anchor.getBoundingClientRect();
+  let left = r.right + 8;
+  if (left + 300 > window.innerWidth - 8) left = r.left - 300 - 8;
+  clampPop(pop, left, r.top);
+  syncGuideBtns();
+}
+function closeGuide() {
+  if (state.guideIdx < 0) return;
+  state.guideIdx = -1;
+  $("guidePop").classList.remove("show");
+  syncGuideBtns();
+}
+/* 只切换 icon 的 on 类，不重建行 DOM——重建会让指针下的节点失效、mouseleave 丢失 */
+function syncGuideBtns() {
+  document.querySelectorAll(".q-guide").forEach(b => {
+    const idx = +b.closest(".q-row").dataset.idx;
+    b.classList.toggle("on", idx === state.guideIdx);
+  });
+}
+
+/* ============ 状态层：字数占比环（spec v3.0 §8：无实时 speaking 标识，占比 = 逐字稿字数） ============ */
+/* 占比越大颜色越深：六档同轴梯度随主题取值（浅色主题 spec v1.0 §3.4） */
+function renderDonut() {
+  const RANK_COLORS = PAL().rank;
+  const total = PARTICIPANTS.reduce((s, p) => s + p.ratio, 0) || 1;
+  const sorted = [...PARTICIPANTS].sort((a, b) => b.ratio - a.ratio);
+  const top = sorted[0];
+
+  /* 中心：固定领先者 + 占比（无 Speaking 双态） */
+  $("dnNm").textContent = top.name;
+  $("dnPc").textContent = top.ratio + "%";
+  $("dnTag").textContent = "Leading";
+
+  /* 环：占比映射弧长，白缝分隔；所有弧段统一视觉权重 */
+  const C = 2 * Math.PI * 54, GAP = C * 2 / 360;
+  let acc = 0, rank = 0, circles = "";
+  sorted.forEach(p => {
+    if (p.ratio <= 0) return;
+    const color = RANK_COLORS[rank++] || RANK_COLORS[5];
+    p._color = color;
+    const frac = p.ratio / total;
+    const len = Math.max(frac * C - GAP, 1);
+    circles += `<circle cx="60" cy="60" r="54" stroke="${color}"
+      stroke-width="12" stroke-dasharray="${len} ${C - len}" stroke-dashoffset="${-acc}"
+      data-name="${esc(p.name)}" data-pc="${p.ratio}"/>`;
+    acc += frac * C;
+  });
+  $("donut").innerHTML = `<g transform="rotate(-90 60 60)"><circle cx="60" cy="60" r="54" stroke="var(--line)" stroke-width="12"/>${circles}</g>`;
+
+  /* 图例：环形图正右方，姓名 + 颜色标记 */
+  $("dmLegend").innerHTML = sorted.map(p =>
+    `<div class="dlg-row"><i style="background:${p._color}"></i><span>${esc(p.name)}</span></div>`
+  ).join("");
+
+  /* hover 弧段 → 统一卡片 tooltip（R4 钳制） */
+  const tip = $("dmTip");
+  $("donut").querySelectorAll("circle[data-name]").forEach(c => {
+    c.addEventListener("mousemove", e => {
+      tip.innerHTML = `${c.dataset.name} · <b>${c.dataset.pc}%</b> · Share of total transcript words`;
+      tip.classList.add("show");
+      clampPop(tip, e.clientX + 12, e.clientY + 12);
+    });
+    c.addEventListener("mouseleave", () => tip.classList.remove("show"));
+  });
+}
+
+/* ============ 字幕层：逐字稿（毛玻璃卡 · 固定窗口 · 打字机） ============ */
+const TS_PHRASES = [
+  "I feel like ANR is a steady performer, but it still comes down to whether the ingredients suit me",
+  "I usually check reviews on RED (Xiaohongshu) first, then the ingredient list",
+  "I bought one last year and gave up on it after two weeks — way too sticky",
+  "My mom and I don't use the same brand — hers is a bit pricier",
+  "If it had hospital backing, I'd be much more willing to try it",
+  "Honestly, I can't tell niacinamide and Pro-Xylane apart",
+];
+const lyrBox = $("lyrScroll"), lyrInner = $("lyrInner");
+let typerT = null, typerTx = null, typerFull = "";
+const lyrNearBottom = () => lyrBox.scrollHeight - lyrBox.scrollTop - lyrBox.clientHeight < 10;
+const lyrToBottom = smooth => lyrBox.scrollTo({ top: lyrBox.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+/* 滚离底部 → 「回到最新」出现；回到底部自动隐藏 */
+lyrBox.addEventListener("scroll", () => $("lyrBack").classList.toggle("show", !lyrNearBottom()));
+$("lyrBack").addEventListener("click", e => { e.stopPropagation(); lyrToBottom(true); });
+/* 打字机：一次 2 字 / 30ms；新句到来时上一句立即补全 */
+function finishTyping() {
+  if (typerT) { clearInterval(typerT); typerT = null; if (typerTx) typerTx.textContent = typerFull; }
+}
+function addLyric(name, text, instant) {
+  const atBottom = lyrNearBottom();
+  finishTyping();
+  const line = document.createElement("p");
+  line.className = "lyr-line";
+  line.innerHTML = `<span class="nm">${esc(name)}: </span><span class="tx"></span>`;
+  lyrInner.appendChild(line);
+  const all = lyrInner.querySelectorAll(".lyr-line");
+  if (all.length > 40) all[0].remove();
+  all.forEach(l => l.classList.remove("cur", "o1"));
+  const n = all.length;
+  all[n - 1].classList.add("cur");
+  if (n >= 2) all[n - 2].classList.add("o1");
+  const tx = line.querySelector(".tx");
+  if (instant) { tx.textContent = text; if (atBottom) lyrToBottom(false); return; }
+  let i = 0;
+  typerTx = tx; typerFull = text;
+  typerT = setInterval(() => {
+    i += 2;
+    tx.textContent = text.slice(0, i);
+    if (atBottom) lyrBox.scrollTop = lyrBox.scrollHeight;
+    if (i >= text.length) { clearInterval(typerT); typerT = null; }
+  }, 30);
+}
+function seedLyrics() {
+  [["46:15", "Han Zhang", "After having my baby, my skin clearly hasn't been as stable as before"],
+   ["45:51", "Yinuo Zhao", "I had an aesthetic procedure once, and since then I pay more attention to repair products"],
+   ["45:22", "Jia Wang", "I'm using Estée Lauder Advanced Night Repair right now — always repurchasing"]].forEach(([t, n, x]) => addLyric(n, x, true));
+}
+/* 收起 ↔ 展开：卡片原位缩回为毛玻璃胶囊，再从胶囊展开（同一位置，无弹窗感） */
+$("lyrColl").addEventListener("click", e => { e.stopPropagation(); $("assist").classList.add("lyr-off"); });
+$("lyrPill").addEventListener("click", () => { $("assist").classList.remove("lyr-off"); lyrToBottom(false); });
+setInterval(() => {
+  if (state.paused || $("assist").classList.contains("lyr-off")) return;
+  const p = PARTICIPANTS[Math.floor(Math.random() * PARTICIPANTS.length)];
+  addLyric(p.name, TS_PHRASES[Math.floor(Math.random() * TS_PHRASES.length)]);
+}, 2600);
+
+/* ============ 大纲收起态窄轨 ============ */
+function renderRail() {
+  const box = $("railList");
+  box.innerHTML = "";
+  let idx = 0;
+  OUTLINE.forEach((sec, si) => {
+    if (si > 0) {
+      const sep = document.createElement("div");
+      sep.className = "rail-sec";
+      box.appendChild(sep);
+    }
+    sec.questions.forEach((q, k) => {
+      const i = idx + k;
+      const b = document.createElement("button");
+      b.className = "rail-q" + (i === state.cur ? " current" : "") + (state.done.has(i) ? " done" : "") + (state.active === i ? " active" : "");
+      b.textContent = String(q.no).padStart(2, "0");
+      b.addEventListener("click", () => setCurrent(i));
+      b.addEventListener("mouseenter", () => showRailTip(b, q));
+      b.addEventListener("mouseleave", () => $("railTip").classList.remove("show"));
+      box.appendChild(b);
+    });
+    idx += sec.questions.length;
+  });
+}
+function showRailTip(anchor, q) {
+  const tip = $("railTip");
+  tip.innerHTML = `<div class="rt-sec">${esc(q.sec)}</div><div class="rt-text">${esc(q.title)}</div>`;
+  tip.classList.add("show");
+  const r = anchor.getBoundingClientRect();
+  clampPop(tip, r.right + 10, r.top - 8);
+}
+$("olCollapse").addEventListener("click", () => { closeGuide(); $("app").classList.add("ol-collapsed"); $("app").style.gridTemplateColumns = ""; layoutNav(); });
+$("olExpand").addEventListener("click", () => { $("app").classList.remove("ol-collapsed"); layoutNav(); });
+
+/* ============ 分割线拖拽（调整大纲列宽） ============ */
+(() => {
+  const rz = $("olResizer"), app = $("app");
+  let startX = 0, startW = 0;
+  rz.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    rz.setPointerCapture(e.pointerId);
+    rz.classList.add("active");
+    document.body.style.userSelect = "none";
+    startX = e.clientX;
+    startW = document.querySelector(".outline").getBoundingClientRect().width;
+    const mv = ev => {
+      const w = Math.min(420, Math.max(220, startW + (ev.clientX - startX)));
+      app.classList.remove("ol-collapsed");
+      app.style.setProperty("--ol-w", w + "px");
+      layoutNav();
+    };
+    const up = () => {
+      rz.classList.remove("active");
+      document.body.style.userSelect = "";
+      rz.removeEventListener("pointermove", mv);
+      rz.removeEventListener("pointerup", up);
+    };
+    rz.addEventListener("pointermove", mv);
+    rz.addEventListener("pointerup", up);
+  });
+})();
+
+/* ============ 受访者条 ============ */
+function renderParticipants() {
+  $("pStack").innerHTML = PARTICIPANTS.map((p, i) => `
+    <span class="p-dot" data-idx="${i}"
+      style="background:${shade(i)}">
+      ${p.name[0]}
+      <div class="p-bubble card-pop ${i === 0 ? "edge-l" : ""}${i === PARTICIPANTS.length - 1 ? " edge-r" : ""}">
+        <div class="b-name">${p.name}</div>
+        <div class="b-meta">${p.age} yrs · pre-registered</div>
+        <div class="b-tags">${p.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+      </div>
+    </span>`).join("");
+  $("pHere").textContent = PARTICIPANTS.length;
+  document.querySelectorAll(".p-dot").forEach(el =>
+    el.addEventListener("click", () => openRoundtable(+el.dataset.idx)));
+}
+
+/* ============ 圆桌弹窗 ============ */
+let rtSel = -1;
+PARTICIPANTS.forEach((p, i) => {
+  const a = -Math.PI / 2 + i * 2 * Math.PI / PARTICIPANTS.length;
+  p.px = 50 + 36 * Math.cos(a); p.py = 50 + 36 * Math.sin(a);
+});
+/* 声纹采集语样本（spec v3.0 §4）：状态位由 "Voiceprint captured" 替换为该受访者的采集语首句 */
+const seatStatus = p => p.vp;
+const vpx = p => p.vp.length > 26 ? p.vp.slice(0, 26).trimEnd() + "…" : p.vp;
+function openRoundtable(idx) {
+  rtSel = (typeof idx === "number" && idx >= 0 && idx < PARTICIPANTS.length) ? idx : -1;
+  renderRoundtable();
+  $("rtMask").classList.add("show");
+}
+function renderRoundtable() {
+  $("rtSeats").innerHTML = PARTICIPANTS.map((p, i) => `
+    <div class="rt-seat ${i === rtSel ? "sel" : ""}"
+      data-idx="${i}" style="left:${p.px}%;top:${p.py}%">
+      <div class="av" style="background:${shade(i)}">${p.name[0]}</div>
+      <div class="nm">${p.name}</div>
+      <div class="st" title="${esc(p.vp)}">${esc(vpx(p))}</div>
+    </div>`).join("");
+  document.querySelectorAll(".rt-seat").forEach(el => bindSeatDrag(el, PARTICIPANTS[+el.dataset.idx]));
+  $("rtRows").innerHTML = PARTICIPANTS.map((p, i) => `
+    <div class="rt-row ${i === rtSel ? "sel" : ""}" data-idx="${i}">
+      <span class="r-name"><span class="r-dot" style="background:${shade(i)}"></span>${p.name}</span>
+      <b title="${esc(p.vp)}">${esc(vpx(p))} · ${p.ratio}%</b>
+    </div>`).join("");
+  document.querySelectorAll(".rt-row").forEach(el =>
+    el.addEventListener("click", () => { rtSel = +el.dataset.idx; renderRoundtable(); }));
+  renderRtDetail();
+}
+function bindSeatDrag(el, p) {
+  el.addEventListener("pointerdown", ev => {
+    ev.preventDefault();
+    el.setPointerCapture(ev.pointerId);
+    const rect = $("rtTable").getBoundingClientRect();
+    const sx = ev.clientX, sy = ev.clientY;
+    let moved = false;
+    const mv = e => {
+      if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 4) moved = true;
+      p.px = Math.min(92, Math.max(8, (e.clientX - rect.left) / rect.width * 100));
+      p.py = Math.min(92, Math.max(8, (e.clientY - rect.top) / rect.height * 100));
+      el.style.left = p.px + "%"; el.style.top = p.py + "%";
+    };
+    const up = () => {
+      el.removeEventListener("pointermove", mv);
+      el.removeEventListener("pointerup", up);
+      if (!moved) { rtSel = PARTICIPANTS.indexOf(p); renderRoundtable(); }
+    };
+    el.addEventListener("pointermove", mv);
+    el.addEventListener("pointerup", up);
+  });
+}
+function renderRtDetail() {
+  const box = $("rtDetail");
+  if (rtSel < 0 || rtSel >= PARTICIPANTS.length) {
+    box.innerHTML = `<div class="empty-hint">Click a seat or a name<br>to view respondent details and actions</div>`;
+    return;
+  }
+  const p = PARTICIPANTS[rtSel];
+  box.innerHTML = `
+    <div class="rt-detail-box">
+      <div class="pe-head">
+        <span class="avatar" style="background:${shade(rtSel)}">${p.name[0]}</span>
+        <span><div class="nm">${p.name}</div><div class="meta">${p.age} yrs · Seat ${rtSel + 1} · <i class="vp-sample" title="${esc(p.vp)}">${esc(vpx(p))}</i></div></span>
+      </div>
+      <div class="pe-tags">${p.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+      <div class="pe-stats">
+        <div class="s"><div class="v">${p.ratio}%</div><div class="k">Share of words</div></div>
+        <div class="s"><div class="v">${Math.round(p.ratio * 1.8)}</div><div class="k">Turns</div></div>
+        <div class="s"><div class="v">Normal</div><div class="k">Voiceprint match</div></div>
+      </div>
+      <div class="pe-actions">
+        <button class="gbtn" id="rtRecolor">Re-capture voiceprint</button>
+        <button class="gbtn danger" id="rtKick">Remove from session</button>
+      </div>
+    </div>`;
+  $("rtRecolor").addEventListener("click", () => {
+    $("rtMask").classList.remove("show");
+    toast(`Voiceprint re-capture started for ${p.name}`);
+  });
+  $("rtKick").addEventListener("click", () => {
+    PARTICIPANTS.splice(rtSel, 1);
+    rtSel = -1;
+    renderRoundtable(); renderParticipants();
+    toast("Removed from session (refresh to reset demo)");
+  });
+}
+$("rtClose").addEventListener("click", () => $("rtMask").classList.remove("show"));
+$("rtMask").addEventListener("click", e => { if (e.target === $("rtMask")) $("rtMask").classList.remove("show"); });
+
+/* ============ 顶栏 ============ */
+setInterval(() => {
+  if (!state.paused) { state.seconds++; $("timer").textContent = fmt(state.seconds); }
+}, 1000);
+$("pauseBtn").addEventListener("click", () => {
+  state.paused = !state.paused;
+  $("pauseBtn").classList.toggle("on", state.paused);
+  /* 录音状态 pill 两态切换（spec 3.1）：live / paused，无弹层 */
+  const pill = $("recPill");
+  pill.className = "spill " + (state.paused ? "paused" : "live");
+  pill.innerHTML = `<span class="live-dot"></span>${state.paused ? "Paused" : "Recording"}`;
+  toast(state.paused ? "Paused: recording and AI processing on hold" : "Resumed: recording and AI processing continue");
+});
+$("endBtn").addEventListener("click", () => $("cfMask").classList.add("show"));
+$("cfCancel").addEventListener("click", () => $("cfMask").classList.remove("show"));
+/* 载入即登记会话状态，保证计时跨页连续 */
+if (!sessionStorage.getItem("mzT0")) sessionStorage.setItem("mzT0", String(Date.now()));
+sessionStorage.setItem("mzSession", "1");
+$("cfMask").addEventListener("click", e => { if (e.target === $("cfMask")) $("cfMask").classList.remove("show"); });
+/* Esc：圆桌弹窗直接关闭；确认弹窗 Esc = 取消（安全侧） */
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if ($("cfMask").classList.contains("show")) { $("cfMask").classList.remove("show"); return; }
+  if ($("rtMask").classList.contains("show")) $("rtMask").classList.remove("show");
+});
+$("cfOk").addEventListener("click", () => {
+  const dur = state.seconds;
+  sessionStorage.removeItem("mzSession");
+  sessionStorage.removeItem("mzT0");
+  location.href = "moderator-hub.html?end=" + dur;
+});
+
+/* ============ 键盘 ============ */
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    closeGuide();
+    $("railTip").classList.remove("show");
+    $("rtMask").classList.remove("show");
+  }
+  if ($("rtMask").classList.contains("show") || $("app").classList.contains("ol-collapsed")) return;
+});
+
+/* ============ AI 提示事件流（spec v3.0 §9）：按题触发、每题至多 1 条未读；Start 事件行 + 已读归档 ============ */
+const TS_ICONS = {
+  hand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>',
+  compass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  cast: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>'
+};
+/* 每道 discussion 题至多 1 条核心提示（key = 重排后题号）；选择/定量题 0 条；切题随题卡切换显示 */
+const TIPS = {
+  1: { icon: "hand",    text: "Yue Sun hasn't spoken yet — invite her into the round" },
+  3: { icon: "compass", text: "Answers circle brand trust — probe for one concrete purchase story" },
+  5: { icon: "clock",   text: "12 min on this question, 4 min over its estimate" },
+  8: { icon: "hand",    text: "Mo Chen has stayed out for 2 rounds — bring him in" },
+};
+const tsState = { events: [], readQ: new Set(), archived: [] };
+/* Start 成功后插入的金色事件行（spec v3.0 §6.3） */
+function pushCastTip(text) {
+  if (state.paused) return;
+  tsState.events.unshift({ icon: "cast", text, tm: fmt(state.seconds) });
+  if (tsState.events.length > 3) tsState.archived.unshift(tsState.events.pop());   /* 未读上限 3 */
+  renderTips();
+}
+function renderTips() {
+  const box = $("tsList"), archBtn = $("tsArch"), archList = $("tsArchList");
+  const q = QUESTIONS[state.cur];
+  const tip = TIPS[q.no] && !tsState.readQ.has(q.no) ? { ...TIPS[q.no], tm: fmt(state.seconds), kind: "tip" } : null;
+  const rows = [
+    ...tsState.events.map(e => ({ ...e, kind: "ev" })),
+    ...(tip ? [tip] : []),
+  ];
+  $("tipStream").classList.toggle("has-events", rows.length + tsState.archived.length > 0);
+  const row = t => `<div class="ts-row">${TS_ICONS[t.icon]}<span class="tx">${esc(t.text)}</span><span class="tm">${t.tm}</span></div>`;
+  box.innerHTML = rows.map(row).join("");
+  rows.forEach((t, i) => {
+    box.querySelectorAll(".ts-row")[i].addEventListener("click", () => {
+      if (t.kind === "tip") {
+        tsState.readQ.add(q.no);   /* 点击 = 已读，随题沉入归档 */
+        tsState.archived.unshift({ icon: t.icon, text: t.text, tm: fmt(state.seconds) });
+      } else {
+        tsState.archived.unshift(tsState.events.splice(i, 1)[0]);   /* events 位于 rows 前段，i 即其下标 */
+      }
+      renderTips();
+    });
+  });
+  archBtn.hidden = !tsState.archived.length;
+  archBtn.innerHTML = `<b>${tsState.archived.length}</b> read`;
+  archList.innerHTML = tsState.archived.map(row).join("");
+}
+$("tsArch").addEventListener("click", () => { $("tsArchList").hidden = !$("tsArchList").hidden; });
+/* 演示初始：当前题（Q01）1 条未读提示 + 2 条已读归档；「AI 助理待命」状态线常驻 */
+[["hand", "Mo Chen has stayed out for 2 rounds", 2540 ],
+ ["clock", "Previous question ran 9 min, near its estimate", 2300 ]].forEach(([icon, text, sec]) => {
+  tsState.archived.push({ icon, text, tm: fmt(sec) });
+});
+renderTips();
+
+/* ============ 初始化 ============ */
+renderParticipants();
+renderDonut();
+seedLyrics();
+
+/* ================= 双主题切换（浅色主题 spec v1.0）：日/月钮 + localStorage + 调色板联动重渲染 ================= */
+(function(){
+  const root=document.documentElement;
+  if(localStorage.getItem("fg-theme")==="light")root.classList.add("light");
+  const btn=$("themeBtn"),sun=$("icoSun"),moon=$("icoMoon");
+  const sync=()=>{
+    const light=root.classList.contains("light");
+    sun.style.display=light?"none":"block";
+    moon.style.display=light?"block":"none";
+    btn.title=light?"Switch to dark theme":"Switch to light theme";
+  };
+  btn.addEventListener("click",()=>{
+    root.classList.toggle("light");
+    localStorage.setItem("fg-theme",root.classList.contains("light")?"light":"dark");
+    sync();
+    /* 受访者头像 / 占比环 / 圆桌 / 大纲的调色板随主题重渲染 */
+    renderOutline();renderRail();renderParticipants();renderDonut();renderRoundtable();
+  });
+  sync();
+})();
+</script>
+</body>
+</html>
