@@ -365,8 +365,11 @@ window.PianoApp.initPiano = function () {
               previewState.timeouts.push(timeout);
             });
 
-            // Fill paths: fade in bottom-to-top
-            const fillDuration = 200;
+            // Fill paths: fade in bottom-to-top. Use the same per-path
+            // duration as the stroke drawing so filled icons (guitar) don't
+            // flash on instantly while line-art icons (Beatles, drum) draw
+            // slowly across the whole preview window.
+            const fillDuration = duration;
             const fillStagger = (PREVIEW_ANIMATION_DURATION - fillDuration) / Math.max(fillPaths.length - 1, 1);
             fillPaths.forEach((path, i) => {
               path.setAttribute("data-anim-type", "fill");
