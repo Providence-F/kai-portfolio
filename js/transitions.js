@@ -105,7 +105,15 @@ const pageInitMap = {
   'experience.html': 'initMap',
 };
 
+// In-memory cache of parsed page content. SPA navigation re-fetches the same
+// HTML on every visit; on slow hosts (e.g. GitHub Pages from mainland China)
+// that re-fetch dominates the transition time. Cache the parsed result so
+// repeat visits render instantly.
+const pageContentCache = {};
+
 function fetchPageContent(url) {
+  if (pageContentCache[url]) return Promise.resolve(pageContentCache[url]);
+
   // Timeout: if GitHub Pages is slow, fall back to full navigation after 8s
   var timeoutPromise = new Promise(function (_, reject) {
     setTimeout(function () { reject(new Error('SPA fetch timeout: ' + url)); }, 8000);
@@ -124,7 +132,7 @@ function fetchPageContent(url) {
       const pageEl = doc.querySelector('.page.page-warm, .page.experience-ariel, .page');
       const descMeta = doc.querySelector('meta[name="description"]');
 
-      return {
+      const result = {
         title: titleEl ? {
           text: titleEl.textContent,
           i18nKey: titleEl.getAttribute('data-i18n'),
@@ -133,6 +141,8 @@ function fetchPageContent(url) {
         pageHTML: pageEl ? pageEl.innerHTML : '',
         description: descMeta ? descMeta.getAttribute('content') : '',
       };
+      pageContentCache[url] = result;
+      return result;
     });
 
   return Promise.race([fetchPromise, timeoutPromise]);
